@@ -2,9 +2,11 @@
 
 ## Overview
 
-Analysis of 1,399 Roman mining sites from the **Oxford Roman Economy Project (OXREP) Database** using machine learning and statistical methods to understand ancient mining patterns.
+**Educational Data Science Project**: Analysis of 1,399 Roman mining sites from the **Oxford Roman Economy Project (OXREP) Database** using machine learning and statistical methods. This project demonstrates fundamental data science skills including EDA, data cleaning, visualization, and classification modeling as part of my learning journey.
 
 **Data Source:** [OXREP Mines Database](https://oxrep.web.ox.ac.uk/mines-database)  
+
+**Learning Objectives**: Practice CRISP-DM framework, handle messy data, build classification models, and communicate findings effectively.
 
 ---
 
@@ -91,7 +93,7 @@ This project answers four core questions using CRISP-DM methodology:
 project-data-science/
 ├── Roman_Mining_EDA_Analysis.ipynb  # Main analysis (38 cells with helper functions)
 ├── oxrep-mines-3.0-20250408.csv     # Data (1,399 sites × 47 features)
-└── README.md                         # This file
+└── README.md                         # This file (technical overview)
 ```
 
 **Notebook Structure:**
@@ -101,6 +103,12 @@ project-data-science/
 4. **Modeling** - Random Forest classification (Question 4)
 5. **Evaluation** - Model assessment and descriptive analytics (Questions 1-3)
 6. **Deployment** - Summary of findings
+
+---
+
+## Documentation
+
+- **README.md** (this file) - Technical project overview with results summary
 
 ---
 
@@ -136,14 +144,15 @@ jupyter notebook
 
 **Data:** [Oxford Roman Economy Project (OXREP)](https://oxrep.web.ox.ac.uk/mines-database)  
 **Framework:** CRISP-DM methodology  
-**Tools:** Python, scikit-learn, pandas, Jupyter
+**Tools:** Python, scikit-learn, pandas, Jupyter  
+**Learning Context:** Created as an educational data science project
 
 ---
 
-## License
+## License & Usage
 
-**Educational Project** - Created for Udacity Data Science Nanodegree  
+**Educational Project** - Created for learning purposes and portfolio demonstration  
 **Data:** OXREP Mining Database - see [terms of use](https://oxrep.web.ox.ac.uk/mines-database)  
-**Code:** Free to use with attribution
+**Code:** Free to use with attribution for educational purposes
 
 ---
