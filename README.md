@@ -26,4 +26,4 @@ Depending on the project, different tools and libraries are used.
 ## 📄 License
 
 This repository is intended for educational purposes.
-License: MIT (or another license of your choice)
+License: MIT
