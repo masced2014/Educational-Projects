@@ -29,18 +29,10 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-audit-${{ hashFiles('rust_file_encrypt/Cargo.lock') }}
-
-      - name: Install cargo-audit
-        run: cargo install cargo-audit --locked
-
       - name: Run cargo audit
-        run: cargo audit
-
+        uses: actions-rust-lang/audit@v1
+        with:
+          working-directory: rust_file_encrypt
   # ── CodeQL analysis ────────────────────────────────────────────────────────
   codeql:
     name: CodeQL Analysis
