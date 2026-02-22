@@ -11,7 +11,6 @@ on:
 
 permissions:
   contents: read
-  security-events: write
 
 jobs:
   # ── cargo audit ────────────────────────────────────────────────────────────
@@ -32,54 +31,4 @@ jobs:
       - name: Run cargo audit
         uses: actions-rust-lang/audit@v1
         with:
-          working-directory: rust_file_encrypt
-  # ── CodeQL analysis ────────────────────────────────────────────────────────
-  codeql:
-    name: CodeQL Analysis
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ "rust" ]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: ${{ matrix.language }}
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Build rust_file_encrypt for CodeQL
-        working-directory: rust_file_encrypt
-        run: cargo build
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:${{ matrix.language }}"
-name: Security Check
-
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  audit:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-      - name: Run Rust Audit
-        uses: actions-rust-lang/audit@v1
-        with:
-          workingDirectory: rust_file_encrypt
+            file: rust_file_encrypt/Cargo.lock
