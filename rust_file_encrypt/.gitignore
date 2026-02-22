@@ -5,6 +5,8 @@ Cargo.lock
 *.swo
 *~
 .DS_Store
+myfile.enc
+myfile.dec
 
 # Coverage artifacts
 coverage-report/
