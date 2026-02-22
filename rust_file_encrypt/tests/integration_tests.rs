@@ -382,3 +382,83 @@ fn test_cli_invalid_encrypted_file() {
     // Should fail
     assert!(!output.status.success());
 }
+
+// ── Interactive / stdin password tests ──────────────────────────────────────
+
+/// Encrypting with an output path that is a directory (not a file) must fail.
+/// This test passes the password via `-p` and asserts a non-zero exit and an error message.
+#[test]
+fn test_cli_encrypt_output_is_directory() {
+    let test_dir = TempDir::new().unwrap();
+    let test_path = test_dir.path();
+
+    let input_file = test_path.join("input.txt");
+    fs::write(&input_file, b"dir output test").unwrap();
+
+    // Use the temp dir itself as the output path — that is a directory, not a file
+    let binary = get_binary_path();
+    let output = Command::new(&binary)
+        .arg("encrypt")
+        .arg("-i")
+        .arg(input_file.to_str().unwrap())
+        .arg("-o")
+        .arg(test_path.to_str().unwrap())
+        .arg("-p")
+        .arg("some_pass")
+        .output()
+        .expect("Failed to execute command");
+
+    assert!(
+        !output.status.success(),
+        "Should fail when output path is a directory"
+    );
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("Error") || stderr.contains("Failed") || stderr.contains("error"));
+}
+
+/// Decrypt a valid encrypted file to a directory path must hit the error branch.
+#[test]
+fn test_cli_decrypt_output_is_directory() {
+    let test_dir = TempDir::new().unwrap();
+    let test_path = test_dir.path();
+
+    let input_file = test_path.join("input.txt");
+    let encrypted_file = test_path.join("encrypted.bin");
+
+    fs::write(&input_file, b"dir output decrypt test").unwrap();
+
+    let binary = get_binary_path();
+    let password = "dir_test_pass";
+
+    // First encrypt successfully
+    let enc = Command::new(&binary)
+        .arg("encrypt")
+        .arg("-i")
+        .arg(input_file.to_str().unwrap())
+        .arg("-o")
+        .arg(encrypted_file.to_str().unwrap())
+        .arg("-p")
+        .arg(password)
+        .output()
+        .unwrap();
+    assert!(enc.status.success());
+
+    // Now decrypt with the directory as output — must fail
+    let output = Command::new(&binary)
+        .arg("decrypt")
+        .arg("-i")
+        .arg(encrypted_file.to_str().unwrap())
+        .arg("-o")
+        .arg(test_path.to_str().unwrap())
+        .arg("-p")
+        .arg(password)
+        .output()
+        .expect("Failed to execute command");
+
+    assert!(
+        !output.status.success(),
+        "Should fail when output path is a directory"
+    );
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("Error") || stderr.contains("Failed") || stderr.contains("error"));
+}

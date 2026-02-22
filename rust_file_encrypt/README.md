@@ -89,10 +89,11 @@ The output file layout is:
 
 ## Testing
 
-Current test suite: **42 tests total**
+Current test suite: **51 tests total**
 
 - Unit tests: `src/crypto.rs` (17)
-- Integration tests: `tests/integration_tests.rs` (11)
+- Unit tests: `src/main.rs` — `#[cfg(test)]` module (7)
+- Integration tests: `tests/integration_tests.rs` (13)
 - Robustness tests: `tests/robustness_tests.rs` (14)
 
 Run all tests:
