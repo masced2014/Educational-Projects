@@ -64,6 +64,7 @@ This project follows **coordinated disclosure**:
   update PRs.
 - Run `cargo audit` locally before submitting Rust changes:
   ```bash
+  cd rust_file_encrypt
   cargo install cargo-audit
   cargo audit
   ```
