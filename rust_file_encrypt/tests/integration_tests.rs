@@ -383,7 +383,7 @@ fn test_cli_invalid_encrypted_file() {
     assert!(!output.status.success());
 }
 
-// ── Interactive / stdin password tests ──────────────────────────────────────
+// ── Output path validation tests ────────────────────────────────────────────
 
 /// Encrypting with an output path that is a directory (not a file) must fail.
 /// This test passes the password via `-p` and asserts a non-zero exit and an error message.
