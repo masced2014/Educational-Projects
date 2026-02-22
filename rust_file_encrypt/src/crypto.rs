@@ -181,7 +181,12 @@ impl FileCrypto {
     /// - Key derivation fails
     /// - Encryption fails
     pub fn encrypt_file(input_path: &str, output_path: &str, password: &str) -> Result<()> {
-        if input_path == output_path {
+        // Compare canonicalized paths to robustly detect when input and output refer to the same file
+        let input_canon = std::fs::canonicalize(input_path)
+            .unwrap_or_else(|_| std::path::PathBuf::from(input_path));
+        let output_canon = std::fs::canonicalize(output_path)
+            .unwrap_or_else(|_| std::path::PathBuf::from(output_path));
+        if input_canon == output_canon {
             anyhow::bail!("Input and output paths must be different to avoid data loss");
         }
 
