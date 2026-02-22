@@ -291,7 +291,15 @@ impl FileCrypto {
     /// - The output file cannot be created or written
     /// - Key derivation fails
     pub fn decrypt_file(input_path: &str, output_path: &str, password: &str) -> Result<()> {
-        if input_path == output_path {
+        // Normalize paths to avoid accidental data loss when they refer to the same file
+        let input_norm = std::fs::canonicalize(input_path)
+            .or_else(|_| std::env::current_dir().map(|cwd| cwd.join(input_path)))
+            .unwrap_or_else(|_| std::path::PathBuf::from(input_path));
+        let output_norm = std::fs::canonicalize(output_path)
+            .or_else(|_| std::env::current_dir().map(|cwd| cwd.join(output_path)))
+            .unwrap_or_else(|_| std::path::PathBuf::from(output_path));
+
+        if input_norm == output_norm {
             anyhow::bail!("Input and output paths must be different to avoid data loss");
         }
 
