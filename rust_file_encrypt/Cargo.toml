@@ -1,0 +1,23 @@
+[package]
+name = "secure-file-crypto"
+version = "0.1.0"
+edition = "2024"
+authors = ["Accenture Engineering Lab"]
+description = "A secure, cross-platform command-line tool for encrypting and decrypting files using AES-256-GCM"
+license = "MIT"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+aes-gcm = "0.10"
+argon2 = "0.5"
+anyhow = "1.0"
+zeroize = { version = "1.8", features = ["derive"] }
+rpassword = "7.3"
+
+[dev-dependencies]
+tempfile = "3.8"
+libc = "0.2"
+
+[[bin]]
+name = "secure-file-crypto"
+path = "src/main.rs"

@@ -1,0 +1,14 @@
+/target
+Cargo.lock
+*.enc
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Coverage artifacts
+coverage-report/
+lcov.info
+*.profraw
+*.profdata
+
