@@ -9,6 +9,13 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: rust_file_encrypt
+
 jobs:
   coverage:
     name: Generate Coverage Report
@@ -38,7 +45,7 @@ jobs:
     - name: Cache cargo build
       uses: actions/cache@v4
       with:
-        path: target
+        path: rust_file_encrypt/target
         key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
         
     - name: Install cargo-llvm-cov
@@ -52,7 +59,7 @@ jobs:
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       with:
-        files: ./lcov.info
+        files: rust_file_encrypt/lcov.info
         fail_ci_if_error: false
         verbose: true
       env:
@@ -63,8 +70,8 @@ jobs:
       with:
         name: coverage-report
         path: |
-          lcov.info
-          coverage-report/
+          rust_file_encrypt/lcov.info
+          rust_file_encrypt/coverage-report/
         retention-days: 30
         
     - name: Check coverage threshold

@@ -27,7 +27,7 @@
 //! # Examples
 //!
 //! ```no_run
-//! use secure_file_crypto::crypto::FileCrypto;
+//! use crate::crypto::FileCrypto;
 //!
 //! // Encrypt a file
 //! FileCrypto::encrypt_file("input.txt", "output.enc", "my_password")?;
@@ -69,7 +69,7 @@ const AUTH_TAG_SIZE: usize = 16;
 /// # Examples
 ///
 /// ```no_run
-/// use secure_file_crypto::crypto::FileCrypto;
+/// use crate::crypto::FileCrypto;
 ///
 /// // Encrypt a file
 /// let result = FileCrypto::encrypt_file("plaintext.txt", "encrypted.bin", "strong_password");
@@ -161,7 +161,7 @@ impl FileCrypto {
     /// # Examples
     ///
     /// ```no_run
-    /// use secure_file_crypto::crypto::FileCrypto;
+    /// use crate::crypto::FileCrypto;
     ///
     /// let result = FileCrypto::encrypt_file(
     ///     "secret.txt",
@@ -175,11 +175,16 @@ impl FileCrypto {
     /// # Errors
     ///
     /// Returns an error if:
+    /// - The input and output paths are the same
     /// - The input file cannot be read
     /// - The output file cannot be created or written
     /// - Key derivation fails
     /// - Encryption fails
     pub fn encrypt_file(input_path: &str, output_path: &str, password: &str) -> Result<()> {
+        if input_path == output_path {
+            anyhow::bail!("Input and output paths must be different to avoid data loss");
+        }
+
         // Read the input file with buffering
         let input_file = File::open(input_path)
             .context(format!("Failed to open input file: {}", input_path))?;
@@ -263,7 +268,7 @@ impl FileCrypto {
     /// # Examples
     ///
     /// ```no_run
-    /// use secure_file_crypto::crypto::FileCrypto;
+    /// use crate::crypto::FileCrypto;
     ///
     /// // Decrypt a file (password must match the one used for encryption)
     /// let result = FileCrypto::decrypt_file(
@@ -278,6 +283,7 @@ impl FileCrypto {
     /// # Errors
     ///
     /// Returns an error if:
+    /// - The input and output paths are the same
     /// - The input file cannot be read
     /// - The file is too small or has invalid format
     /// - The password is incorrect
@@ -285,6 +291,10 @@ impl FileCrypto {
     /// - The output file cannot be created or written
     /// - Key derivation fails
     pub fn decrypt_file(input_path: &str, output_path: &str, password: &str) -> Result<()> {
+        if input_path == output_path {
+            anyhow::bail!("Input and output paths must be different to avoid data loss");
+        }
+
         // Read the encrypted file with buffering
         let input_file = File::open(input_path)
             .context(format!("Failed to open input file: {}", input_path))?;
@@ -894,5 +904,43 @@ mod tests {
 
         // Should fail because passwords are case-sensitive
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_encrypt_same_input_output_path() {
+        let test_dir = TempDir::new().unwrap();
+        let same_path = test_dir.path().join("file.txt");
+        fs::write(&same_path, b"Data").unwrap();
+
+        let result = FileCrypto::encrypt_file(
+            same_path.to_str().unwrap(),
+            same_path.to_str().unwrap(),
+            "password",
+        );
+
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Input and output paths must be different"));
+    }
+
+    #[test]
+    fn test_decrypt_same_input_output_path() {
+        let test_dir = TempDir::new().unwrap();
+        let same_path = test_dir.path().join("file.enc");
+        fs::write(&same_path, b"Data").unwrap();
+
+        let result = FileCrypto::decrypt_file(
+            same_path.to_str().unwrap(),
+            same_path.to_str().unwrap(),
+            "password",
+        );
+
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Input and output paths must be different"));
     }
 }

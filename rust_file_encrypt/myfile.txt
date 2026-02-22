@@ -252,9 +252,9 @@ Once published, documentation will be available at [docs.rs](https://docs.rs).
 ## 📊 Performance
 
 - **File Size Support**: Successfully handles files from single bytes up to 5MB+ (tested in robustness suite)
-- **Memory Efficiency**: Processes files in chunks for efficient memory usage
+- **Memory Usage**: Reads the entire file into memory before encryption and decryption
 - **Speed**: AES-256-GCM provides hardware-accelerated encryption on modern CPUs
-- **Scalability**: Suitable for both small configuration files and large data files
+- **Scalability**: Suitable for small and medium-sized files; very large files are limited by available system memory
 
 Performance characteristics:
 - Small files (< 1KB): Near-instant encryption/decryption

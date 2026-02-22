@@ -1,5 +1,4 @@
 /target
-Cargo.lock
 *.enc
 *.swp
 *.swo
