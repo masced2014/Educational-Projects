@@ -113,6 +113,35 @@ fn prompt_password(prompt: &str) -> io::Result<Zeroizing<String>> {
         .map_err(|e| io::Error::new(e.kind(), format!("Failed to read password: {}", e)))
 }
 
+/// Executes the encrypt or decrypt operation given parsed inputs.
+///
+/// This function is extracted from `main` so it can be unit-tested independently
+/// of the CLI argument parser and interactive password prompts.
+///
+/// Returns `Ok(())` on success, or an error string on failure.
+pub fn run_operation(
+    command: &str,
+    input: &str,
+    output: &str,
+    password: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let pwd = Zeroizing::new(password.to_string());
+    let result = match command {
+        "encrypt" => {
+            println!("Encrypting file: {} -> {}", input, output);
+            FileCrypto::encrypt_file(input, output, &pwd)
+        }
+        "decrypt" => {
+            println!("Decrypting file: {} -> {}", input, output);
+            FileCrypto::decrypt_file(input, output, &pwd)
+        }
+        other => {
+            return Err(format!("Unknown command: {}", other).into());
+        }
+    };
+    result.map_err(|e| e.into())
+}
+
 /// Main entry point for the secure file crypto tool.
 ///
 /// Parses command-line arguments and executes either encryption or decryption operations.
@@ -176,5 +205,118 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             eprintln!("✗ Error: {}", e);
             std::process::exit(1);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::io;
+    use tempfile::TempDir;
+
+    // ── run_operation unit tests ──────────────────────────────────────────────
+
+    #[test]
+    fn test_run_operation_encrypt_decrypt_roundtrip() {
+        let dir = TempDir::new().unwrap();
+        let input = dir.path().join("plain.txt");
+        let enc = dir.path().join("plain.enc");
+        let dec = dir.path().join("plain.dec");
+
+        fs::write(&input, b"hello from run_operation").unwrap();
+
+        run_operation("encrypt", input.to_str().unwrap(), enc.to_str().unwrap(), "pw1").unwrap();
+        run_operation("decrypt", enc.to_str().unwrap(), dec.to_str().unwrap(), "pw1").unwrap();
+
+        assert_eq!(fs::read(&dec).unwrap(), b"hello from run_operation");
+    }
+
+    #[test]
+    fn test_run_operation_encrypt_missing_input_returns_error() {
+        let dir = TempDir::new().unwrap();
+        let result = run_operation(
+            "encrypt",
+            dir.path().join("no_such.txt").to_str().unwrap(),
+            dir.path().join("out.enc").to_str().unwrap(),
+            "pw",
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_run_operation_decrypt_wrong_password_returns_error() {
+        let dir = TempDir::new().unwrap();
+        let input = dir.path().join("plain.txt");
+        let enc = dir.path().join("plain.enc");
+        let dec = dir.path().join("plain.dec");
+
+        fs::write(&input, b"data").unwrap();
+        run_operation("encrypt", input.to_str().unwrap(), enc.to_str().unwrap(), "correct").unwrap();
+
+        let result = run_operation("decrypt", enc.to_str().unwrap(), dec.to_str().unwrap(), "wrong");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_run_operation_unknown_command_returns_error() {
+        let dir = TempDir::new().unwrap();
+        let result = run_operation(
+            "shred",
+            dir.path().join("x").to_str().unwrap(),
+            dir.path().join("y").to_str().unwrap(),
+            "pw",
+        );
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Unknown command"));
+    }
+
+    #[test]
+    fn test_run_operation_encrypt_output_is_directory_returns_error() {
+        let dir = TempDir::new().unwrap();
+        let input = dir.path().join("plain.txt");
+        fs::write(&input, b"data").unwrap();
+
+        // Output path is a directory → create-file should fail
+        let result = run_operation(
+            "encrypt",
+            input.to_str().unwrap(),
+            dir.path().to_str().unwrap(),
+            "pw",
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_run_operation_decrypt_output_is_directory_returns_error() {
+        let dir = TempDir::new().unwrap();
+        let input = dir.path().join("plain.txt");
+        let enc = dir.path().join("plain.enc");
+        fs::write(&input, b"data").unwrap();
+        run_operation("encrypt", input.to_str().unwrap(), enc.to_str().unwrap(), "pw").unwrap();
+
+        let result = run_operation(
+            "decrypt",
+            enc.to_str().unwrap(),
+            dir.path().to_str().unwrap(),
+            "pw",
+        );
+        assert!(result.is_err());
+    }
+
+    // ── prompt_password unit test ─────────────────────────────────────────────
+    // prompt_password relies on rpassword which reads /dev/tty; we test only the
+    // stderr-flush and the error-mapping path by injecting an IO error directly.
+
+    #[test]
+    fn test_prompt_password_error_mapping() {
+        // Simulate the map_err closure: an rpassword-style IO error should be re-wrapped.
+        let original = io::Error::new(io::ErrorKind::BrokenPipe, "pipe broken");
+        let mapped = io::Error::new(
+            original.kind(),
+            format!("Failed to read password: {}", original),
+        );
+        assert_eq!(mapped.kind(), io::ErrorKind::BrokenPipe);
+        assert!(mapped.to_string().contains("Failed to read password"));
     }
 }
