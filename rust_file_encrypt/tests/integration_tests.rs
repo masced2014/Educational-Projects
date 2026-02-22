@@ -385,9 +385,8 @@ fn test_cli_invalid_encrypted_file() {
 
 // ── Interactive / stdin password tests ──────────────────────────────────────
 
-/// Encrypt with mismatched interactive passwords must exit non-zero.
-/// We use `echo` piping via shell to provide two different passwords on stdin.
-/// Encrypt to a directory path (not a file) must hit the error branch and exit non-zero.
+/// Encrypting with an output path that is a directory (not a file) must fail.
+/// This test passes the password via `-p` and asserts a non-zero exit and an error message.
 #[test]
 fn test_cli_encrypt_output_is_directory() {
     let test_dir = TempDir::new().unwrap();
