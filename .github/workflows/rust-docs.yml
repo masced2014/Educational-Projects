@@ -1,0 +1,71 @@
+name: Documentation (rust_file_encrypt)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'rust_file_encrypt/**'
+      - '.github/workflows/rust-docs.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'rust_file_encrypt/**'
+      - '.github/workflows/rust-docs.yml'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  docs:
+    name: Check Documentation
+    runs-on: ubuntu-latest
+
+    # All `run` steps execute inside the rust_file_encrypt subfolder.
+    defaults:
+      run:
+        working-directory: rust_file_encrypt
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('rust_file_encrypt/Cargo.lock') }}
+
+    - name: Cache cargo index
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('rust_file_encrypt/Cargo.lock') }}
+
+    - name: Cache cargo build
+      uses: actions/cache@v4
+      with:
+        path: rust_file_encrypt/target
+        key: ${{ runner.os }}-cargo-docs-${{ hashFiles('rust_file_encrypt/Cargo.lock') }}
+
+    - name: Generate and check documentation
+      run: |
+        echo "Generating documentation and checking for warnings..."
+        RUSTDOCFLAGS="-D warnings -D missing-docs" cargo doc --no-deps --document-private-items
+        echo "✅ Documentation generated successfully at target/doc/"
+
+    - name: Archive documentation
+      uses: actions/upload-artifact@v4
+      with:
+        name: rust-docs
+        path: rust_file_encrypt/target/doc/
+        retention-days: 7
+
+    - name: Documentation summary
+      run: |
+        echo "✅ Documentation check completed successfully!"
+        echo "📚 Generated documentation is available as an artifact"
+        echo ""
+        echo "To view locally, run: cargo doc --no-deps --open"
