@@ -143,6 +143,79 @@ cargo doc --no-deps
 cargo doc --no-deps --open
 ```
 
+## Supply Chain Security (SBOM)
+
+A [Software Bill of Materials (SBOM)](https://www.cisa.gov/sbom) is generated and scanned for known CVEs on every pull request and push to `main`.
+
+### Workflow summary
+
+The workflow is defined in [`.github/workflows/sbom.yml`](.github/workflows/sbom.yml) and runs two jobs:
+
+| Job | Tool | Output |
+|---|---|---|
+| `generate-sbom` | [Syft](https://github.com/anchore/syft) | `sbom.cdx.json` — CycloneDX JSON, retained 90 days |
+| `scan-vulnerabilities` | [Grype](https://github.com/anchore/grype) | SARIF uploaded to the GitHub Security tab |
+
+**Policy**: the build is blocked if any **Critical** CVE is found. High and Medium findings are reported but do not block merges (adjust the threshold in the workflow to match your security requirements).
+
+All findings are visible under **Security → Code scanning** in the GitHub repository.
+
+### Run locally
+
+Install the tools once:
+
+```bash
+# Syft — SBOM generator
+curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sudo sh -s -- -b /usr/local/bin
+
+# Grype — vulnerability scanner
+curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sudo sh -s -- -b /usr/local/bin
+```
+
+Generate the SBOM:
+
+```bash
+cd rust_file_encrypt
+syft . -o cyclonedx-json=sbom.cdx.json
+```
+
+Scan for vulnerabilities (human-readable table):
+
+```bash
+grype sbom:./sbom.cdx.json
+```
+
+Enforce the same Critical threshold as CI:
+
+```bash
+grype sbom:./sbom.cdx.json --fail-on critical
+```
+
+Produce a SARIF report (same format as the workflow):
+
+```bash
+grype sbom:./sbom.cdx.json -o sarif > grype-results.sarif
+```
+
+### Vulnerability policy (`.grype.yaml`)
+
+The [`.grype.yaml`](.grype.yaml) file is picked up automatically by Grype (locally and in CI) and contains:
+
+- The `fail-on-severity: critical` threshold
+- Documented ignore rules for confirmed false positives, each with a justification and the advisory reference
+
+Add new ignore entries there whenever Grype flags a false positive, and include the reason so the suppression can be audited later.
+
+## CI / GitHub Actions
+
+Three workflows run on every PR and push to `main`:
+
+| Workflow file | Purpose | Badge trigger |
+|---|---|---|
+| [`coverage.yml`](.github/workflows/coverage.yml) | Run test suite, measure line coverage with `cargo-llvm-cov`, enforce ≥ 95% threshold, upload to Codecov | Push / PR |
+| [`docs.yml`](.github/workflows/docs.yml) | Build `cargo doc`, fail on any missing-docs warning | Push / PR |
+| [`sbom.yml`](.github/workflows/sbom.yml) | Generate CycloneDX SBOM with Syft, scan with Grype, upload SARIF, post PR comment | Push / PR |
+
 ## Troubleshooting
 
 - **"Failed to open input file"**: check file path and read permissions.
