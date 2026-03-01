@@ -53,7 +53,7 @@ jobs:
     - name: Generate and check documentation
       run: |
         echo "Generating documentation and checking for warnings..."
-        RUSTDOCFLAGS="-D warnings -D missing-docs" cargo doc --no-deps --document-private-items
+        RUSTDOCFLAGS="-D warnings -D missing_docs" cargo doc --no-deps --document-private-items
         echo "✅ Documentation generated successfully at target/doc/"
 
     - name: Archive documentation
