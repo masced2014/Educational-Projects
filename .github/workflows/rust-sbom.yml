@@ -102,7 +102,7 @@ jobs:
       # anchore/scan-action runs Grype against the SBOM.
       - name: Scan SBOM with Grype
         id: grype
-        uses: anchore/scan-action@v4
+        uses: anchore/scan-action@v7
         with:
           sbom: ${{ env.SBOM_FILE }}
           fail-build: false
