@@ -149,7 +149,7 @@ A [Software Bill of Materials (SBOM)](https://www.cisa.gov/sbom) is generated an
 
 ### Workflow summary
 
-The workflow is defined in [`.github/workflows/sbom.yml`](.github/workflows/sbom.yml) and runs two jobs:
+The workflow is defined in [`rust-sbom.yml`](../.github/workflows/rust-sbom.yml) and runs two jobs:
 
 | Job | Tool | Output |
 |---|---|---|
@@ -212,9 +212,9 @@ Three workflows run on every PR and push to `main`:
 
 | Workflow file | Purpose | Badge trigger |
 |---|---|---|
-| [`coverage.yml`](.github/workflows/coverage.yml) | Run test suite, measure line coverage with `cargo-llvm-cov`, enforce ≥ 95% threshold, upload to Codecov | Push / PR |
-| [`docs.yml`](.github/workflows/docs.yml) | Build `cargo doc`, fail on any missing-docs warning | Push / PR |
-| [`sbom.yml`](.github/workflows/sbom.yml) | Generate CycloneDX SBOM with Syft, scan with Grype, upload SARIF, post PR comment | Push / PR |
+| [`rust-coverage.yml`](../.github/workflows/rust-coverage.yml) | Run test suite, measure line coverage with `cargo-llvm-cov`, enforce ≥ 95% threshold, upload to Codecov | Push / PR |
+| [`rust-docs.yml`](../.github/workflows/rust-docs.yml) | Build `cargo doc`, fail on any missing-docs warning | Push / PR |
+| [`rust-sbom.yml`](../.github/workflows/rust-sbom.yml) | Generate CycloneDX SBOM with Syft, scan with Grype, upload SARIF, post PR comment | Push / PR |
 
 ## Troubleshooting
 
