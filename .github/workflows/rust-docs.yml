@@ -3,8 +3,14 @@ name: Rust Docs
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'rust_file_encrypt/**'
+      - '.github/workflows/rust-docs.yml'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'rust_file_encrypt/**'
+      - '.github/workflows/rust-docs.yml'
 
 permissions:
   contents: read
