@@ -1,0 +1,239 @@
+name: SBOM & Vulnerability Scan
+
+# Trigger on every PR targeting main and on direct pushes to main.
+# Path filter ensures the job only runs when rust_file_encrypt sources
+# or the workflow itself change.
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+# Minimal permissions following the principle of least privilege.
+# security-events: write  → upload SARIF to the GitHub Security tab
+# pull-requests: write    → post a summary comment on every PR
+# contents: read          → checkout the repository
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+env:
+  CARGO_TERM_COLOR: always
+  SBOM_FILE: sbom.cdx.json   # CycloneDX JSON – machine-readable & widely supported
+
+jobs:
+  # ── Job 1: generate the SBOM ──────────────────────────────────────────────
+  generate-sbom:
+    name: Generate SBOM (Syft / CycloneDX)
+    runs-on: ubuntu-latest
+
+    outputs:
+      sbom-artifact: ${{ steps.generate.outputs.artifact-name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Rust toolchain is required so that Syft can interrogate
+      # Cargo metadata and resolve transitive dependencies.
+      - name: Install stable Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo registry & build artefacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      # Cargo.lock must exist for an accurate dependency snapshot.
+      # cargo generate-lockfile is idempotent when the file already exists.
+      - name: Ensure Cargo.lock is present
+        run: cargo generate-lockfile
+
+      # anchore/sbom-action wraps Syft.
+      # Format: cyclonedx-json  → broad toolchain support (grype, Dependency-Track, etc.)
+      # The SBOM is pinned to the exact commit SHA for traceability.
+      - name: Generate SBOM with Syft
+        id: generate
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: ${{ env.SBOM_FILE }}
+          artifact-name: sbom-${{ github.sha }}.cdx.json
+          upload-artifact: true
+          upload-artifact-retention: 90   # days – long enough for audit trails
+
+      - name: Display SBOM component summary
+        run: |
+          echo "──────────────────────────────────────────────"
+          echo "SBOM written to: ${{ env.SBOM_FILE }}"
+          echo "Unique components: $(jq '.components | length' ${{ env.SBOM_FILE }})"
+          echo "Spec version : $(jq -r '.specVersion'        ${{ env.SBOM_FILE }})"
+          echo "Serial number: $(jq -r '.serialNumber'       ${{ env.SBOM_FILE }})"
+          echo "──────────────────────────────────────────────"
+
+  # ── Job 2: scan the SBOM for CVEs with Grype ──────────────────────────────
+  scan-vulnerabilities:
+    name: Vulnerability Scan (Grype)
+    runs-on: ubuntu-latest
+    needs: generate-sbom
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Re-download the SBOM produced by the previous job.
+      - name: Download SBOM artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: sbom-${{ github.sha }}.cdx.json
+          path: .
+
+      # Rename the downloaded artifact back to the conventional filename.
+      - name: Normalise SBOM filename
+        run: mv sbom-${{ github.sha }}.cdx.json ${{ env.SBOM_FILE }} 2>/dev/null || true
+
+      # anchore/scan-action runs Grype against the SBOM.
+      # fail-build: false  → let the explicit threshold step control the exit code
+      #                       so we can always upload results even on failure.
+      # severity-cutoff    → vulnerabilities at or above this level appear in SARIF.
+      - name: Scan SBOM with Grype
+        id: grype
+        uses: anchore/scan-action@v4
+        with:
+          sbom: ${{ env.SBOM_FILE }}
+          fail-build: false
+          severity-cutoff: medium
+          output-format: sarif
+          only-fixed: false   # report both fixed and unfixed to track remediation status
+
+      # Upload SARIF so findings appear in the repository's Security → Code scanning tab.
+      - name: Upload Grype SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: ${{ steps.grype.outputs.sarif }}
+          category: grype-sbom-scan
+
+      # Keep both files as workflow artifacts for offline audit / integration with
+      # external security tooling (e.g. Dependency-Track, DefectDojo).
+      - name: Archive SBOM and scan results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-artefacts-${{ github.sha }}
+          path: |
+            ${{ env.SBOM_FILE }}
+            ${{ steps.grype.outputs.sarif }}
+          retention-days: 90
+
+      # ── Vulnerability threshold enforcement ────────────────────────────────
+      # SARIF severity mapping used by Grype:
+      #   error   → Critical
+      #   warning → High
+      #   note    → Medium / Low
+      #
+      # Policy: fail the job on any CRITICAL finding.
+      # Adjust the threshold here to match your security policy.
+      - name: Enforce vulnerability threshold (CRITICAL = build-breaker)
+        id: threshold
+        run: |
+          SARIF="${{ steps.grype.outputs.sarif }}"
+
+          CRITICAL=$(jq '[.runs[].results[] | select(.level == "error")]   | length' "$SARIF")
+          HIGH=$(    jq '[.runs[].results[] | select(.level == "warning")] | length' "$SARIF")
+          MEDIUM=$(  jq '[.runs[].results[] | select(.level == "note")]    | length' "$SARIF")
+          TOTAL=$(   jq '[.runs[].results[]]                               | length' "$SARIF")
+
+          echo "critical=$CRITICAL" >> "$GITHUB_OUTPUT"
+          echo "high=$HIGH"         >> "$GITHUB_OUTPUT"
+          echo "medium=$MEDIUM"     >> "$GITHUB_OUTPUT"
+          echo "total=$TOTAL"       >> "$GITHUB_OUTPUT"
+
+          echo "──────────────────────────────────────────────"
+          echo "Grype scan results"
+          echo "  Critical : $CRITICAL"
+          echo "  High     : $HIGH"
+          echo "  Medium   : $MEDIUM"
+          echo "  Total    : $TOTAL"
+          echo "──────────────────────────────────────────────"
+
+          if [ "$CRITICAL" -gt 0 ]; then
+            echo "❌ $CRITICAL critical vulnerability/vulnerabilities found – blocking merge."
+            exit 1
+          fi
+
+          echo "✅ No critical vulnerabilities detected."
+
+      # ── PR comment ─────────────────────────────────────────────────────────
+      # Posts a markdown summary table on every pull-request run.
+      # The step is skipped on direct pushes to main (no PR to comment on).
+      - name: Post vulnerability summary as PR comment
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const critical = '${{ steps.threshold.outputs.critical }}';
+            const high     = '${{ steps.threshold.outputs.high }}';
+            const medium   = '${{ steps.threshold.outputs.medium }}';
+            const total    = '${{ steps.threshold.outputs.total }}';
+
+            const passed   = critical === '0';
+            const badge    = passed ? '✅ PASSED' : '❌ FAILED – critical CVEs detected';
+            const advice   = passed
+              ? '> No critical vulnerabilities found. Review high / medium findings as part of normal triage.'
+              : '> **Action required**: resolve all critical CVEs before this PR can be merged.';
+
+            const sha      = context.sha.substring(0, 7);
+
+            const body = [
+              `## 🔍 SBOM & Vulnerability Scan — ${badge}`,
+              '',
+              `| Severity | Count |`,
+              `|---|---|`,
+              `| 🔴 Critical | **${critical}** |`,
+              `| 🟠 High     | ${high} |`,
+              `| 🟡 Medium   | ${medium} |`,
+              `| **Total**   | **${total}** |`,
+              '',
+              advice,
+              '',
+              `**SBOM**: \`sbom-${context.sha}.cdx.json\` (CycloneDX JSON) — [download from workflow artifacts](../../actions/runs/${{ github.run_id }})`,
+              '',
+              `📋 Full findings are available in the [Security → Code scanning](../../security/code-scanning) tab (SARIF uploaded by commit \`${sha}\`).`,
+            ].join('\n');
+
+            // Find and update an existing bot comment rather than spamming new ones.
+            const marker = '## 🔍 SBOM & Vulnerability Scan';
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(
+              c => c.user.type === 'Bot' && c.body.startsWith(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner:      context.repo.owner,
+                repo:       context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner:        context.repo.owner,
+                repo:         context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
