@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   docs:
-    name: Build cargo docs (no missing-docs warnings)
+    name: Build cargo docs (fail on rustdoc warnings)
     runs-on: ubuntu-latest
     defaults:
       run:
