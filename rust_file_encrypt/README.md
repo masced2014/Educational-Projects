@@ -149,7 +149,7 @@ A [Software Bill of Materials (SBOM)](https://www.cisa.gov/sbom) is generated an
 
 ### Workflow summary
 
-The workflow is defined in [`security.yml`](../.github/workflows/security.yml) and runs two jobs:
+The workflow is defined in [`rust-sbom.yml`](../.github/workflows/rust-sbom.yml) and runs two jobs:
 
 | Job | Tool | Output |
 |---|---|---|
@@ -208,13 +208,15 @@ Add new ignore entries there whenever Grype flags a false positive, and include 
 
 ## CI / GitHub Actions
 
-Three workflows run on every PR and push to `main`:
+Five workflows run automatically on every PR and push to `main`. The first three are scoped to `rust_file_encrypt/` changes via path filters:
 
-| Workflow file | Purpose | Badge trigger |
+| Workflow file | Purpose | Trigger |
 |---|---|---|
-| [`rust-coverage.yml`](../.github/workflows/rust-coverage.yml) | Run test suite, measure line coverage with `cargo-llvm-cov`, enforce ≥ 95% threshold, upload to Codecov | Push / PR |
-| [`rust-docs.yml`](../.github/workflows/rust-docs.yml) | Build `cargo doc`, fail on any missing-docs warning | Push / PR |
-| [`rust-sbom.yml`](../.github/workflows/rust-sbom.yml) | Generate CycloneDX SBOM with Syft, scan with Grype, upload SARIF, post PR comment | Push / PR |
+| [`rust-coverage.yml`](../.github/workflows/rust-coverage.yml) | Run test suite, measure line coverage with `cargo-llvm-cov`, enforce ≥ 95% threshold, upload to Codecov | Push / PR (path-filtered) |
+| [`rust-docs.yml`](../.github/workflows/rust-docs.yml) | Build `cargo doc`, fail on any missing-docs warning | Push / PR (path-filtered) |
+| [`rust-sbom.yml`](../.github/workflows/rust-sbom.yml) | Generate CycloneDX SBOM with Syft, scan with Grype, upload SARIF, post PR comment | Push / PR (path-filtered) |
+| [`security.yml`](../.github/workflows/security.yml) | Run `cargo audit` against known advisory database | Push / PR / Weekly schedule |
+| [`codeql.yml`](../.github/workflows/codeql.yml) | CodeQL static analysis for Rust | Push / PR / Weekly schedule |
 
 ## Troubleshooting
 

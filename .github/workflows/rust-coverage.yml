@@ -1,0 +1,91 @@
+name: Code Coverage (rust_file_encrypt)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'rust_file_encrypt/**'
+      - '.github/workflows/rust-coverage.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'rust_file_encrypt/**'
+      - '.github/workflows/rust-coverage.yml'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  coverage:
+    name: Generate Coverage Report
+    runs-on: ubuntu-latest
+
+    # All `run` steps execute inside the rust_file_encrypt subfolder.
+    defaults:
+      run:
+        working-directory: rust_file_encrypt
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: llvm-tools-preview
+
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('rust_file_encrypt/Cargo.lock') }}
+
+    - name: Cache cargo index
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('rust_file_encrypt/Cargo.lock') }}
+
+    - name: Cache cargo build
+      uses: actions/cache@v4
+      with:
+        path: rust_file_encrypt/target
+        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('rust_file_encrypt/Cargo.lock') }}
+
+    - name: Install cargo-llvm-cov
+      run: cargo install cargo-llvm-cov
+
+    - name: Generate coverage report
+      run: |
+        cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+        cargo llvm-cov --all-features --workspace
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: rust_file_encrypt/lcov.info
+        fail_ci_if_error: false
+        verbose: true
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Archive coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: |
+          rust_file_encrypt/lcov.info
+          rust_file_encrypt/coverage-report/
+        retention-days: 30
+
+    - name: Check coverage threshold
+      run: |
+        COVERAGE=$(cargo llvm-cov --all-features --workspace 2>&1 | grep "TOTAL" | awk '{print $NF}' | sed 's/%//')
+        echo "Current coverage: ${COVERAGE}%"
+
+        if (( $(echo "$COVERAGE < 95.0" | bc -l) )); then
+          echo "ERROR: Coverage ${COVERAGE}% is below minimum threshold of 95%"
+          exit 1
+        else
+          echo "SUCCESS: Coverage ${COVERAGE}% meets minimum threshold of 95%"
+        fi

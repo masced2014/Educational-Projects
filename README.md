@@ -12,6 +12,7 @@ Each subfolder contains an individual learning project with an own description o
 - **rust_file_encrypt**: Rust CLI project for file encryption/decryption using AES-256-GCM and Argon2id. **Built entirely with GitHub Copilot** as an AI-assisted development exercise.
   - Project documentation: [rust_file_encrypt/README.md](rust_file_encrypt/README.md)
   - Coverage notes: [rust_file_encrypt/COVERAGE.md](rust_file_encrypt/COVERAGE.md)
+  - Supply chain security: SBOM generated with Syft and scanned with Grype on every PR that touches `rust_file_encrypt` — see the [SBOM section](rust_file_encrypt/README.md#supply-chain-security-sbom)
 
 ## 🧠 Learning Philosophy
 
