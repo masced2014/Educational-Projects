@@ -3,8 +3,14 @@ name: Rust SBOM
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'rust_file_encrypt/**'
+      - '.github/workflows/rust-sbom.yml'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'rust_file_encrypt/**'
+      - '.github/workflows/rust-sbom.yml'
 
 permissions:
   contents: read
