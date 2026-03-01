@@ -145,15 +145,15 @@ cargo doc --no-deps --open
 
 ## Supply Chain Security (SBOM)
 
-A [Software Bill of Materials (SBOM)](https://www.cisa.gov/sbom) is generated and scanned for known CVEs on every pull request and push to `main`.
+A [Software Bill of Materials (SBOM)](https://www.cisa.gov/sbom) can be generated and scanned for known CVEs using the included GitHub Actions workflow.
 
 ### Workflow summary
 
-The workflow is defined in [`.github/workflows/sbom.yml`](.github/workflows/sbom.yml) and runs two jobs:
+In this educational workspace, an example workflow is defined in [`rust_file_encrypt/.github/workflows/sbom.yml`](./.github/workflows/sbom.yml) and runs two jobs. To have it execute automatically on every pull request and push to `main` in a repository, copy or move it to that repository's root `.github/workflows/` directory.
 
 | Job | Tool | Output |
 |---|---|---|
-| `generate-sbom` | [Syft](https://github.com/anchore/syft) | `sbom.cdx.json` — CycloneDX JSON, retained 90 days |
+| `generate-sbom` | [Syft](https://github.com/anchore/syft) | On disk: `sbom.cdx.json`; uploaded artifact: `sbom-${sha}.cdx.json` — CycloneDX JSON, retained 90 days |
 | `scan-vulnerabilities` | [Grype](https://github.com/anchore/grype) | SARIF uploaded to the GitHub Security tab |
 
 **Policy**: the build is blocked if any **Critical** CVE is found. High and Medium findings are reported but do not block merges (adjust the threshold in the workflow to match your security requirements).
@@ -199,7 +199,9 @@ grype sbom:./sbom.cdx.json -o sarif > grype-results.sarif
 
 ### Vulnerability policy (`.grype.yaml`)
 
-The [`.grype.yaml`](.grype.yaml) file is picked up automatically by Grype (locally and in CI) and contains:
+The [`.grype.yaml`](.grype.yaml) file lives in the `rust_file_encrypt/` directory. Grype picks it up automatically when run from that directory (e.g. the `cd rust_file_encrypt` commands above). When running Grype from the repository root or from CI with a different working directory, pass the config explicitly with `--config rust_file_encrypt/.grype.yaml`.
+
+It contains:
 
 - The `fail-on-severity: critical` threshold
 - Documented ignore rules for confirmed false positives, each with a justification and the advisory reference
