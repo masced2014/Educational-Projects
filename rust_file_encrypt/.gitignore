@@ -12,3 +12,7 @@ lcov.info
 *.profraw
 *.profdata
 
+# Generated CI artifacts (SBOM & vulnerability scan) – never commit these
+sbom.cdx.json
+grype-results.sarif
+
