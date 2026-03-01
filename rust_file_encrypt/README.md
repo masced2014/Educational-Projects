@@ -149,7 +149,7 @@ A [Software Bill of Materials (SBOM)](https://www.cisa.gov/sbom) is generated an
 
 ### Workflow summary
 
-The workflow is defined in [`security.yml`](../.github/workflows/security.yml) and runs two jobs:
+The workflow is defined in [`rust-sbom.yml`](../.github/workflows/rust-sbom.yml) and runs two jobs:
 
 | Job | Tool | Output |
 |---|---|---|
