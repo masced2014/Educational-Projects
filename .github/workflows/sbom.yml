@@ -1,8 +1,8 @@
 name: SBOM & Vulnerability Scan
 
 # Trigger on every PR targeting main and on direct pushes to main.
-# Path filter ensures the job only runs when rust_file_encrypt sources
-# or the workflow itself change.
+# Add `paths:` filters here if you want to scope this workflow to
+# specific directories or files.
 on:
   pull_request:
     branches: [ main ]
@@ -11,11 +11,13 @@ on:
 
 # Minimal permissions following the principle of least privilege.
 # security-events: write  → upload SARIF to the GitHub Security tab
-# pull-requests: write    → post a summary comment on every PR
+# pull-requests: write    → interact with pull requests (e.g. status, reviews)
+# issues: write           → post a summary comment on every PR (via Issues API)
 # contents: read          → checkout the repository
 permissions:
   contents: read
   pull-requests: write
+  issues: write
   security-events: write
 
 env:
@@ -55,6 +57,7 @@ jobs:
       # cargo generate-lockfile is idempotent when the file already exists.
       - name: Ensure Cargo.lock is present
         run: cargo generate-lockfile
+        working-directory: rust_file_encrypt
 
       # anchore/sbom-action wraps Syft.
       # Format: cyclonedx-json  → broad toolchain support (grype, Dependency-Track, etc.)
@@ -63,7 +66,7 @@ jobs:
         id: generate
         uses: anchore/sbom-action@v0
         with:
-          path: .
+          path: rust_file_encrypt
           format: cyclonedx-json
           output-file: ${{ env.SBOM_FILE }}
           artifact-name: sbom-${{ github.sha }}.cdx.json
@@ -98,7 +101,12 @@ jobs:
 
       # Rename the downloaded artifact back to the conventional filename.
       - name: Normalise SBOM filename
-        run: mv sbom-${{ github.sha }}.cdx.json ${{ env.SBOM_FILE }} 2>/dev/null || true
+        run: |
+          if [ ! -f "sbom-${{ github.sha }}.cdx.json" ]; then
+            echo "Error: Expected SBOM artifact 'sbom-${{ github.sha }}.cdx.json' not found."
+            exit 1
+          fi
+          mv "sbom-${{ github.sha }}.cdx.json" "${{ env.SBOM_FILE }}"
 
       # anchore/scan-action runs Grype against the SBOM.
       # fail-build: false  → let the explicit threshold step control the exit code
@@ -107,6 +115,8 @@ jobs:
       - name: Scan SBOM with Grype
         id: grype
         uses: anchore/scan-action@v4
+        env:
+          GRYPE_CONFIG: rust_file_encrypt/.grype.yaml
         with:
           sbom: ${{ env.SBOM_FILE }}
           fail-build: false
@@ -116,7 +126,7 @@ jobs:
 
       # Upload SARIF so findings appear in the repository's Security → Code scanning tab.
       - name: Upload Grype SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: ${{ steps.grype.outputs.sarif }}
@@ -166,7 +176,8 @@ jobs:
           echo "──────────────────────────────────────────────"
 
           if [ "$CRITICAL" -gt 0 ]; then
-            echo "❌ $CRITICAL critical vulnerability/vulnerabilities found – blocking merge."
+            [ "$CRITICAL" -eq 1 ] && VULN_WORD="vulnerability" || VULN_WORD="vulnerabilities"
+            echo "❌ $CRITICAL critical ${VULN_WORD} found – blocking merge."
             exit 1
           fi
 

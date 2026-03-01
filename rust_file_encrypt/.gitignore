@@ -12,3 +12,7 @@ lcov.info
 *.profraw
 *.profdata
 
+# Generated SBOM / security-scan artifacts (produced by CI, not committed)
+sbom.cdx.json
+grype-results.sarif
+
