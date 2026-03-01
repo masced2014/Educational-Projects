@@ -3,8 +3,14 @@ name: Rust Coverage
 on:
   push:
     branches: [ main ]
+    paths:
+      - rust_file_encrypt/**
+      - .github/workflows/rust-coverage.yml
   pull_request:
     branches: [ main ]
+    paths:
+      - rust_file_encrypt/**
+      - .github/workflows/rust-coverage.yml
 
 permissions:
   contents: read
