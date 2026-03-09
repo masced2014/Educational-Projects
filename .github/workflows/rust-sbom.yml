@@ -131,7 +131,7 @@ jobs:
       - name: Enforce vulnerability threshold (CRITICAL = build-breaker)
         id: threshold
         run: |
-          SARIF="$GITHUB_WORKSPACE/${{ steps.grype.outputs.sarif }}"
+          SARIF="${{ steps.grype.outputs.sarif }}"
 
           CRITICAL=$(jq '[.runs[].results[] | select(.level == "error")]   | length' "$SARIF")
           HIGH=$(    jq '[.runs[].results[] | select(.level == "warning")] | length' "$SARIF")
