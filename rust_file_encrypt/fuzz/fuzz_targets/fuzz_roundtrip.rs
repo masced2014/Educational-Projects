@@ -48,12 +48,18 @@ fuzz_target!(|input: FuzzInput| {
         assert_eq!(decrypted, input.plaintext, "Roundtrip must preserve plaintext");
 
         // Wrong password: AEAD auth tag must reject the decryption.
-        let wrong_dec_file = NamedTempFile::new().unwrap();
-        let wrong_result = FileCrypto::decrypt_file(
-            enc_file.path().to_str().unwrap(),
-            wrong_dec_file.path().to_str().unwrap(),
-            "definitely_wrong_password_xyz123!@#",
-        );
-        assert!(wrong_result.is_err(), "Decrypt with wrong password must fail");
+        // Guard against the edge case where the fuzz-derived password happens to
+        // equal the hardcoded "wrong" password, which would make this a correct
+        // password and cause the assertion below to fire spuriously.
+        const WRONG_PASSWORD: &str = "definitely_wrong_password_xyz123!@#";
+        if password != WRONG_PASSWORD {
+            let wrong_dec_file = NamedTempFile::new().unwrap();
+            let wrong_result = FileCrypto::decrypt_file(
+                enc_file.path().to_str().unwrap(),
+                wrong_dec_file.path().to_str().unwrap(),
+                WRONG_PASSWORD,
+            );
+            assert!(wrong_result.is_err(), "Decrypt with wrong password must fail");
+        }
     }
 });
