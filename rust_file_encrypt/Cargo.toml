@@ -6,6 +6,13 @@ authors = ["Accenture Engineering Lab"]
 description = "A secure, cross-platform command-line tool for encrypting and decrypting files using AES-256-GCM"
 license = "MIT"
 
+# ── Feature flags ─────────────────────────────────────────────────────────────
+[features]
+# Replaces production Argon2id parameters with the absolute minimum cost
+# (m=8 KiB, t=1, p=1) so that fuzz targets can exercise hundreds of
+# encrypt/decrypt cycles per second.  NEVER enable in a production build.
+fast-kdf = []
+
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }
 aes-gcm = "0.10"
@@ -17,6 +24,10 @@ rpassword = "7.3"
 [dev-dependencies]
 tempfile = "3.26"
 libc = "0.2"
+
+[lib]
+name = "secure_file_crypto"
+path = "src/lib.rs"
 
 [[bin]]
 name = "secure-file-crypto"
