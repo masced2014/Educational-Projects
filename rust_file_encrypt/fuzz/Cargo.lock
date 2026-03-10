@@ -607,8 +607,9 @@ dependencies = [
 
 [[package]]
 name = "secure-file-crypto-fuzz"
-version = "0.0.1"
+version = "0.0.0"
 dependencies = [
+ "arbitrary",
  "libfuzzer-sys",
  "secure-file-crypto",
  "tempfile",

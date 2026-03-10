@@ -128,7 +128,7 @@ The three targets each attack a distinct threat model:
 |---|---|---|
 | `fuzz_decrypt_arbitrary` | Feed any byte sequence to `decrypt_file` | Guarantees the decryption surface never panics on attacker-controlled input; exercises the minimum-size guard, auth-tag rejection, and all error-handling branches |
 | `fuzz_encrypt_plaintext` | Encrypt arbitrary bytes, decrypt, verify roundtrip | Proves encrypt+decrypt is an identity function for **every** possible plaintext; surfaces any data-loss or corruption bug |
-| `fuzz_roundtrip` | Structured: arbitrary (plaintext, `password_bytes`), roundtrip + wrong-password check | Covers the entire Argon2 key-derivation path with arbitrary passwords (including empty, non-UTF-8, very long) |
+| `fuzz_roundtrip` | Structured: arbitrary (plaintext, `password_bytes`), roundtrip + wrong-password check | Covers the entire Argon2 key-derivation path with arbitrary valid UTF-8 passwords (including empty and very long); also asserts that AEAD authentication rejects a wrong password |
 
 ### Prerequisites
 

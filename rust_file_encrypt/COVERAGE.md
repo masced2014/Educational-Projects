@@ -83,7 +83,7 @@ Three fuzz targets complement the standard test suite (see `fuzz/fuzz_targets/`)
 |---|---|
 | `fuzz_decrypt_arbitrary` | Exercises the exact-minimum-size boundary, auth-tag rejection, and every byte-offset mutation in the salt/nonce/ciphertext extraction at ~12 000–17 000 exec/s (with `fast-kdf`) |
 | `fuzz_encrypt_plaintext` | Confirms the encrypt→decrypt roundtrip holds for all plaintext lengths (0 bytes, 1 byte, multi-megabyte) at ~2 000 exec/s |
-| `fuzz_roundtrip` | Drives Argon2 key derivation with arbitrary passwords including empty, non-UTF-8, and very long strings at ~2 000–3 000 exec/s |
+| `fuzz_roundtrip` | Drives Argon2 key derivation with arbitrary valid UTF-8 passwords (including empty and very long); asserts wrong-password AEAD rejection at ~2 000–3 000 exec/s |
 
 Fuzz targets are compiled with the `fast-kdf` feature (m=8 KiB, t=1, p=1
 Argon2id parameters).  They use `cargo +nightly fuzz` and report coverage via
@@ -100,4 +100,4 @@ branch in `derive_key` is then reachable by the existing unit tests.)
 
 ## Educational Context
 
-The test suite — including unit, integration, and robustness tests — was generated with **GitHub Copilot** as part of a learning exercise in AI-assisted development. The high coverage (97.27% overall line coverage, 91.54% for `main.rs`) demonstrates what Copilot-driven test generation can achieve for a focused Rust project. The `run_operation()` refactor — extracting testable logic from the `main()` function — illustrates a Copilot-guided design pattern for improving coverage in CLI applications where stdin is not easily controllable in tests.
+The test suite — including unit, integration, and robustness tests — was generated with **GitHub Copilot** as part of a learning exercise in AI-assisted development. The high coverage (97.11% overall line coverage, 91.54% for `main.rs`) demonstrates what Copilot-driven test generation can achieve for a focused Rust project. The `run_operation()` refactor — extracting testable logic from the `main()` function — illustrates a Copilot-guided design pattern for improving coverage in CLI applications where stdin is not easily controllable in tests.
