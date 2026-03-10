@@ -1,5 +1,7 @@
 /target
-/fuzz
+/fuzz/target/
+/fuzz/artifacts/
+/fuzz/corpus/
 *.enc
 *.swp
 *.swo
