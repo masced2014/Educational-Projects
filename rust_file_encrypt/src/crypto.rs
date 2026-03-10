@@ -45,6 +45,8 @@ use argon2::{
     password_hash::rand_core::RngCore,
     Argon2,
 };
+#[cfg(feature = "fast-kdf")]
+use argon2::{Algorithm, Params, Version};
 use anyhow::{Context, Result};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read, Write};
@@ -111,7 +113,21 @@ impl FileCrypto {
     ///
     /// Returns an error if the key derivation process fails.
     fn derive_key(password: &str, salt: &[u8]) -> Result<Zeroizing<[u8; KEY_SIZE]>> {
+        // Production build: use Argon2id default parameters (memory-hard, ~32 ms/call).
+        // fast-kdf feature: use absolute minimum parameters so fuzz targets can run at
+        // hundreds of iterations per second.  NEVER enable `fast-kdf` in production.
+        #[cfg(not(feature = "fast-kdf"))]
         let argon2 = Argon2::default();
+
+        #[cfg(feature = "fast-kdf")]
+        let argon2 = Argon2::new(
+            Algorithm::Argon2id,
+            Version::V0x13,
+            // m=8 KiB, t=1 iteration, p=1 lane — absolute minimum accepted by argon2 0.5
+            Params::new(8, 1, 1, None)
+                .map_err(|e| anyhow::anyhow!("fast-kdf Params::new failed: {}", e))?,
+        );
+
         let mut key = Zeroizing::new([0u8; KEY_SIZE]);
         
         argon2

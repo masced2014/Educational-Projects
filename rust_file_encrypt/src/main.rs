@@ -30,10 +30,8 @@
 //! - Authentication tags ensure data integrity and prevent tampering
 //! - Sensitive data is zeroized from memory after use
 
-pub mod crypto;
-
 use clap::{Parser, Subcommand};
-use crypto::FileCrypto;
+use secure_file_crypto::crypto::FileCrypto;
 use rpassword::read_password;
 use std::io::{self, Write};
 use zeroize::Zeroizing;

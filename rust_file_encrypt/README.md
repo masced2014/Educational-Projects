@@ -116,6 +116,76 @@ cargo test --test integration_tests
 cargo test --test robustness_tests
 ```
 
+## Fuzzing
+
+Fuzz targets live in `fuzz/fuzz_targets/` and use [cargo-fuzz](https://github.com/rust-fuzz/cargo-fuzz) (LibFuzzer).
+
+### Why fuzz this project?
+
+The three targets each attack a distinct threat model:
+
+| Target | What it probes | Security value |
+|---|---|---|
+| `fuzz_decrypt_arbitrary` | Feed any byte sequence to `decrypt_file` | Guarantees the decryption surface never panics on attacker-controlled input; exercises the minimum-size guard, auth-tag rejection, and all error-handling branches |
+| `fuzz_encrypt_plaintext` | Encrypt arbitrary bytes, decrypt, verify roundtrip | Proves encrypt+decrypt is an identity function for **every** possible plaintext; surfaces any data-loss or corruption bug |
+| `fuzz_roundtrip` | Structured: arbitrary (plaintext, `password_bytes`), roundtrip + wrong-password check | Covers the entire Argon2 key-derivation path with arbitrary passwords (including empty, non-UTF-8, very long) |
+
+### Prerequisites
+
+```bash
+# Nightly Rust (required by libfuzzer-sys)
+rustup toolchain install nightly --profile minimal
+
+# cargo-fuzz (installed once per machine)
+cargo install cargo-fuzz
+```
+
+### `fast-kdf` feature
+
+Argon2id is intentionally slow (~32 ms per call in production).  The `fast-kdf`
+feature flag swaps in the minimum legal parameters (m=8 KiB, t=1, p=1) so fuzz
+targets can run at **thousands of iterations per second**.
+
+`fast-kdf` is enabled **automatically** by `fuzz/Cargo.toml`; it must **never**
+be used in a production build.
+
+### Build all fuzz targets
+
+```bash
+cargo +nightly fuzz build
+```
+
+### Run a specific target
+
+```bash
+# Run until a crash is found (Ctrl-C to stop)
+cargo +nightly fuzz run fuzz_decrypt_arbitrary
+cargo +nightly fuzz run fuzz_encrypt_plaintext
+cargo +nightly fuzz run fuzz_roundtrip
+
+# Time-limited runs (useful in CI)
+cargo +nightly fuzz run fuzz_decrypt_arbitrary -- -max_total_time=60
+```
+
+### Reproduce a crash
+
+If a crash (or assertion failure) is found, the input is saved to
+`fuzz/artifacts/<target>/crash-*`.  Replay it with:
+
+```bash
+cargo +nightly fuzz run fuzz_decrypt_arbitrary fuzz/artifacts/fuzz_decrypt_arbitrary/crash-<hash>
+```
+
+### Fuzz corpus
+
+libfuzzer automatically maintains a corpus in `fuzz/corpus/<target>/`.  Seed the
+corpus with representative encrypted files to accelerate coverage discovery:
+
+```bash
+mkdir -p fuzz/corpus/fuzz_decrypt_arbitrary
+cp myfile.txt.enc fuzz/corpus/fuzz_decrypt_arbitrary/
+```
+
 ## Coverage
 
 Coverage is tracked with `cargo-llvm-cov`.
