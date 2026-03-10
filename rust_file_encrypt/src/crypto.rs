@@ -87,8 +87,9 @@ pub struct FileCrypto;
 impl FileCrypto {
     /// Derives a 256-bit encryption key from a password using Argon2id.
     ///
-    /// This function uses the Argon2id algorithm with default parameters to convert
-    /// a user password into a cryptographically strong 256-bit key suitable for AES-256.
+    /// This function converts a user password into a cryptographically strong
+    /// 256-bit key suitable for AES-256.  The Argon2 parameters used depend on
+    /// the active feature flags (see **Security Notes** below).
     ///
     /// # Arguments
     ///
@@ -102,12 +103,22 @@ impl FileCrypto {
     ///
     /// # Security Notes
     ///
-    /// This uses Argon2::default() parameters. The current implementation does not
-    /// store Argon2 version or parameters in the file header, which means files are tied
-    /// to the current crate defaults. If Argon2 parameters need to change in the future,
-    /// consider: (1) implementing file format versioning with explicit KDF parameters,
-    /// or (2) documenting the Argon2 version and settings used to create existing files
-    /// for potential migration tools.
+    /// **Without the `fast-kdf` feature** (production default): uses `Argon2::default()`
+    /// parameters — memory-hard Argon2id with production-strength cost settings
+    /// (~32 ms per call).
+    ///
+    /// **With the `fast-kdf` feature** (fuzz / CI only): uses explicitly minimised
+    /// parameters (m=8 KiB, t=1 iteration, p=1 lane) so that fuzz targets can
+    /// exercise hundreds of encrypt/decrypt cycles per second.  **Never enable
+    /// `fast-kdf` in a production build** — these parameters provide no meaningful
+    /// brute-force resistance.
+    ///
+    /// The current implementation does not store Argon2 version or parameters in
+    /// the file header, which means files are tied to the crate's compile-time
+    /// defaults.  If parameters need to change in the future, consider:
+    /// (1) implementing file-format versioning with explicit KDF parameters, or
+    /// (2) documenting the Argon2 version and settings used to create existing
+    /// files for potential migration tools.
     ///
     /// # Errors
     ///

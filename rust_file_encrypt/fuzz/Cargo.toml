@@ -1,0 +1,37 @@
+[workspace]
+
+[package]
+name = "secure-file-crypto-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+tempfile = "3.26"
+
+[dependencies.secure_file_crypto]
+path = ".."
+features = ["fast-kdf"]
+
+# Fuzz targets must be defined as [[bin]] entries here.
+[[bin]]
+name = "fuzz_decrypt_arbitrary"
+path = "fuzz_targets/fuzz_decrypt_arbitrary.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_encrypt_plaintext"
+path = "fuzz_targets/fuzz_encrypt_plaintext.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_roundtrip"
+path = "fuzz_targets/fuzz_roundtrip.rs"
+test = false
+doc = false
