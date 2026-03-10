@@ -10,10 +10,12 @@ publish = false
 cargo-fuzz = true
 
 [dependencies]
-libfuzzer-sys = "0.4"
+libfuzzer-sys = { version = "0.4", features = ["arbitrary-derive"] }
+arbitrary = { version = "1", features = ["derive"] }
 tempfile = "3.26"
 
 [dependencies.secure_file_crypto]
+package = "secure-file-crypto"
 path = ".."
 features = ["fast-kdf"]
 
