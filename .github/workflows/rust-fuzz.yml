@@ -40,7 +40,7 @@ jobs:
           toolchain: nightly-2024-01-01
 
       - name: Cache cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-fuzz-registry-${{ hashFiles('rust_file_encrypt/Cargo.lock') }}
@@ -48,15 +48,15 @@ jobs:
             ${{ runner.os }}-fuzz-registry-
 
       - name: Cache cargo git index
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cargo/git
           key: ${{ runner.os }}-fuzz-git-${{ hashFiles('rust_file_encrypt/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-fuzz-git-
 
-      - name: Cache fuzz build artifacts
-        uses: actions/cache@v4
+      - name: Cache fuzz build artefacts
+        uses: actions/cache@v5
         with:
           path: rust_file_encrypt/fuzz/target
           key: ${{ runner.os }}-fuzz-target-${{ matrix.target }}-${{ hashFiles('rust_file_encrypt/fuzz/Cargo.toml', 'rust_file_encrypt/Cargo.lock') }}
