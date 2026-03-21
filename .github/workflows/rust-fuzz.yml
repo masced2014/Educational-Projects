@@ -1,0 +1,92 @@
+name: Fuzz Testing (rust_file_encrypt)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'rust_file_encrypt/**'
+      - '.github/workflows/rust-fuzz.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'rust_file_encrypt/**'
+      - '.github/workflows/rust-fuzz.yml'
+
+env:
+  CARGO_TERM_COLOR: always
+  # Seconds each fuzz target runs in CI — enough to catch regressions without
+  # blowing the job time budget.
+  FUZZ_DURATION: 60
+
+jobs:
+  fuzz:
+    name: Fuzz – ${{ matrix.target }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false          # run all targets even if one finds a crash
+      matrix:
+        target:
+          - fuzz_decrypt_arbitrary
+          - fuzz_encrypt_plaintext
+          - fuzz_roundtrip
+
+    defaults:
+      run:
+        working-directory: rust_file_encrypt
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install nightly Rust toolchain
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Cache cargo registry
+        uses: actions/cache@v5
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-fuzz-registry-${{ hashFiles('rust_file_encrypt/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-fuzz-registry-
+
+      - name: Cache cargo git index
+        uses: actions/cache@v5
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-fuzz-git-${{ hashFiles('rust_file_encrypt/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-fuzz-git-
+
+      - name: Cache fuzz build artefacts
+        uses: actions/cache@v5
+        with:
+          path: rust_file_encrypt/fuzz/target
+          key: ${{ runner.os }}-fuzz-target-${{ matrix.target }}-${{ hashFiles('rust_file_encrypt/fuzz/Cargo.toml', 'rust_file_encrypt/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-fuzz-target-${{ matrix.target }}-
+
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz
+
+      - name: Ensure corpus directory exists
+        run: mkdir -p fuzz/corpus/${{ matrix.target }}
+
+      - name: Run fuzz target (${{ matrix.target }})
+        # libFuzzer exits with code 0 when -max_total_time is reached normally.
+        # It exits non-zero on a crash/OOM, so this step will fail automatically.
+        run: |
+          cargo fuzz run ${{ matrix.target }} \
+            fuzz/corpus/${{ matrix.target }} \
+            -- -max_total_time=${{ env.FUZZ_DURATION }} \
+               -max_len=65536
+
+      - name: Upload crash artifacts
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fuzz-crashes-${{ matrix.target }}
+          path: |
+            rust_file_encrypt/fuzz/artifacts/${{ matrix.target }}/
+          if-no-files-found: warn
+          retention-days: 30
