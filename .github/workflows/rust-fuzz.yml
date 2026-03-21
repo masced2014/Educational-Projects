@@ -32,7 +32,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install nightly Rust toolchain
         uses: dtolnay/rust-toolchain@nightly
@@ -77,9 +77,10 @@ jobs:
 
       - name: Upload crash artifacts
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fuzz-crashes-${{ matrix.target }}
           path: |
             rust_file_encrypt/fuzz/artifacts/${{ matrix.target }}/
+          if-no-files-found: warn
           retention-days: 30
