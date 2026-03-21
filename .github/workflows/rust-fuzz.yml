@@ -1,6 +1,11 @@
 name: Fuzz Testing (rust_file_encrypt)
 
 on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'rust_file_encrypt/**'
+      - '.github/workflows/rust-fuzz.yml'
   pull_request:
     branches: [ main ]
     paths:
