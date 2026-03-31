@@ -35,7 +35,7 @@ START → get_topic → search_topic → summarize_topic → present_summary
 
 1. **Install Ollama** from [ollama.com](https://ollama.com) and pull a model:
    ```bash
-   ollama pull llama3.1
+   ollama pull llama3.1:8b
    ```
 
 2. **Create and activate a virtual environment:**
@@ -89,13 +89,9 @@ OLLAMA_MODEL = "mistral"   # or "gemma3", "phi3", "llama3.1:8b", etc.
 
 | Package | Version | Purpose |
 |---|---|---|
-| `langchain` | 0.2.16 | Core LLM framework |
-| `langchain-ollama` | latest | Ollama integration |
-| `langchain-community` | 0.2.16 | LangChain community integrations |
+| `langchain-ollama` | >=0.1.0,<0.2.0 | Ollama integration (includes `langchain-core`) |
 | `langgraph` | 0.2.19 | Agentic state machine |
-| `langchainhub` | 0.1.21 | Prompt hub utilities |
-| `ddgs` | latest | DuckDuckGo web search (no API key; renamed from `duckduckgo-search`) |
-| `python-dotenv` | 1.0.1 | Environment variable loading |
+| `ddgs` | >=1.0.0,<2.0.0 | DuckDuckGo web search (no API key; renamed from `duckduckgo-search`) |
 | `ipywidgets` | ≥ 8.0 | Interactive chat UI inside the notebook |
 
 ## Disclaimer
