@@ -8,6 +8,10 @@ Each subfolder contains an individual learning project with an own description o
 
 ### Current Projects
 
+- **agentic_ai**: Agentic AI chatbots built with LangGraph and Ollama, running fully locally. Includes two notebooks:
+  - `multi-agent-chatbot.ipynb` — routes topics to specialist agents (HealthBot, QualityBot) via an LLM classifier
+  - `medical-chatbot..ipynb` — standalone HealthBot for patient education with web-grounded summaries and comprehension quizzes
+  - Project documentation: [agentic_ai/README.md](agentic_ai/README.md)
 - **data_science**: Exploratory data analysis work and notebook-based learning projects.
 - **rust_file_encrypt**: Rust CLI project for file encryption/decryption using AES-256-GCM and Argon2id. **Built entirely with GitHub Copilot** as an AI-assisted development exercise.
   - Project documentation: [rust_file_encrypt/README.md](rust_file_encrypt/README.md)
