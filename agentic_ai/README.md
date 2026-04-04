@@ -91,7 +91,6 @@ OLLAMA_MODEL = "mistral"   # or "gemma3", "phi3", "llama3.1:8b", etc.
 ```
 .
 ├── multi-agent-chatbot.ipynb   # Multi-Agent ChatBot — router + specialist agents
-├── medical-chatbot..ipynb      # Standalone HealthBot — single-agent patient education
 ├── requirements.txt            # Python dependencies
 ├── .gitignore
 └── README.md
@@ -111,17 +110,6 @@ OLLAMA_MODEL = "mistral"   # or "gemma3", "phi3", "llama3.1:8b", etc.
 ### `multi-agent-chatbot.ipynb` — Multi-Agent ChatBot
 
 The primary notebook described above. Routes topics to specialist agents (HealthBot, QualityBot) via an LLM classifier.
-
-### `medical-chatbot..ipynb` — Standalone HealthBot
-
-A focused, single-agent version of HealthBot aimed at patient education. It shares the same LangGraph + Ollama stack but operates independently — no routing layer. Use this if you only need the medical domain:
-
-1. Enter a health topic or condition
-2. Receive a web-grounded, patient-friendly summary (2 DuckDuckGo searches)
-3. Answer a short comprehension quiz and receive a graded result (A–F)
-4. Continue with a new topic or end the session
-
-Open `medical-chatbot..ipynb` and run all cells; the chat panel appears in the last cell output.
 
 ---
 
