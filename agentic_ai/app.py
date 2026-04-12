@@ -33,7 +33,6 @@ Flow per turn
 import asyncio
 import logging
 import queue
-import sys
 import threading
 import time
 import traceback
@@ -745,9 +744,8 @@ def stop_server(history: list[dict]):
         "content": "👋 Server is shutting down. You can close this tab.",
     }]
     # Shut down gracefully in a background thread so Gradio can send this
-    # response first.  demo.close() stops the Gradio server cleanly, then
-    # sys.exit() raises SystemExit which runs atexit handlers and flushes
-    # buffers before the process terminates.
+    # response first.  demo.close() stops the Gradio server, which causes
+    # launch() in the main thread to return naturally and the process exits.
     def _exit():
         time.sleep(1.0)
         try:
@@ -755,7 +753,6 @@ def stop_server(history: list[dict]):
                 _demo.close()
         except Exception:
             pass
-        sys.exit(0)
     threading.Thread(target=_exit, daemon=True).start()
     return history
 
