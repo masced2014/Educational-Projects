@@ -240,7 +240,9 @@ def main() -> None:
         persist_directory=CHROMA_PERSIST_DIR,
     )
 
-    before = len(store.get()["ids"])
+    # Use the underlying ChromaDB collection's count() for a lightweight integer
+    # count rather than fetching all IDs via store.get()["ids"].
+    before = store._collection.count()
     print(f"\n── Writing to ChromaDB ────────────────────────────────────────────")
     print(f"  Collection : {collection}")
     print(f"  Store path : {CHROMA_PERSIST_DIR}")
@@ -248,7 +250,7 @@ def main() -> None:
 
     store.add_documents(chunks)
 
-    after = len(store.get()["ids"])
+    after = store._collection.count()
     print(f"  Chunks after : {after}  (+{after - before} added)")
     print("\n✅ Done. Re-run cell 5 in the notebook to reload the retrievers.")
 
