@@ -672,9 +672,11 @@ def respond(message: str, history: list[dict]):
     """
     global _graph_thread
 
-    # Echo the user's message and clear the textbox immediately so the user
-    # gets visual feedback before the graph thread even wakes up.
-    history = history + [{"role": "user", "content": message}]
+    # Echo the user's message only when it contains visible content, but clear
+    # the textbox immediately in all cases so the user gets prompt feedback
+    # before the graph thread even wakes up.
+    if message.strip():
+        history = history + [{"role": "user", "content": message}]
     yield history, ""
 
     # Auto-restart if the graph thread has exited (session ended or crashed)
