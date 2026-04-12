@@ -35,6 +35,9 @@ build/
 .DS_Store
 Thumbs.db
 
+# RAG corpus (large binary files, rebuilt on demand)
+rag_corpus/
+
 # pytest / coverage
 .pytest_cache/
 .coverage
