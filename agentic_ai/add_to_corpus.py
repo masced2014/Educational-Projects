@@ -228,6 +228,20 @@ def _normalise_metadata(chunks: list) -> None:
             m["source"] = m.get("title", "Unknown")
 
 
+def _chroma_count(store) -> int:
+    """Return the number of documents in *store* without fetching all IDs.
+
+    Tries the native ``_collection.count()`` fast path first (mirrors the
+    notebook's RAG-setup cell).  Falls back to ``len(store.get()["ids"])``
+    when the private attribute is unavailable so the CLI stays compatible
+    across ``langchain-chroma`` / ``chromadb`` version changes.
+    """
+    collection = getattr(store, "_collection", None)
+    if collection is not None and callable(getattr(collection, "count", None)):
+        return collection.count()
+    return len(store.get()["ids"])
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -294,9 +308,9 @@ def main() -> None:
         persist_directory=CHROMA_PERSIST_DIR,
     )
 
-    # Use the underlying ChromaDB collection's count() for a lightweight integer
-    # count rather than fetching all IDs via store.get()["ids"].
-    before = store._collection.count()
+    # Use a guarded count helper – tries _collection.count() (fast) and falls
+    # back to store.get()["ids"] for compatibility across dependency versions.
+    before = _chroma_count(store)
     print(f"\n── Writing to ChromaDB ────────────────────────────────────────────")
     print(f"  Collection : {collection}")
     print(f"  Store path : {CHROMA_PERSIST_DIR}")
@@ -304,7 +318,7 @@ def main() -> None:
 
     store.add_documents(chunks)
 
-    after = store._collection.count()
+    after = _chroma_count(store)
     print(f"  Chunks after : {after}  (+{after - before} added)")
     print("\n✅ Done. Re-run cell 5 in the notebook to reload the retrievers.")
 
