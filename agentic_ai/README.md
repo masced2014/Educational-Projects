@@ -117,7 +117,7 @@ Then open **http://127.0.0.1:7860** in your browser.
 
 Configuration constants (`OLLAMA_MODEL`, `CHROMA_PERSIST_DIR`, etc.) are defined at the top of `app.py` — edit them directly.
 
-> **Note:** Run cell 5 (RAG Corpus Setup) in the notebook at least once before launching `app.py`, or the chatbot will fall back to DuckDuckGo-only retrieval.
+> **Note:** You do **not** need to run notebook cell 5 before launching `app.py`. The browser app initializes/builds its RAG retrievers on startup. Run cell 5 only if you want to prebuild or refresh the local RAG corpus from the notebook.
 
 **Notebook** — edit `OLLAMA_MODEL` in cell 2:
 
