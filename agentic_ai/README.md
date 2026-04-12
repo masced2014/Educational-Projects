@@ -17,7 +17,7 @@ An agentic AI system that routes user questions to specialised chatbot agents �
 - **Comprehension quizzes** — generates and grades a short-answer question based solely on the presented material
 - **Multi-topic sessions** — loop through as many topics as you like, switching agents as needed
 - **Fully local** — runs on your machine via Ollama; no data sent to external AI APIs
-- **Single chat UI** — one interactive ipywidgets panel with a scrollable message area; agents are identified by name in the chat
+- **Two UI options** — interactive ipywidgets panel in the Jupyter notebook *or* a standalone Gradio browser app (`app.py`)
 
 ## Architecture
 
@@ -74,6 +74,8 @@ search_* ──► ChromaDB (local RAG corpus)  ─── enough chunks? ──�
 
 ## Usage
 
+### Notebook (`multi-agent-chatbot.ipynb`)
+
 Open `multi-agent-chatbot.ipynb` in **VS Code** (recommended) or Jupyter and run all cells in order:
 
 ```bash
@@ -95,9 +97,35 @@ Run cells in this order:
 
 > **Note:** The graph runs in a background thread so the kernel stays idle between responses. VS Code dispatches button/Enter events only when the kernel is not busy, which is why the last cell returns immediately after starting the thread.
 
-### Changing the model
+---
 
-Edit `OLLAMA_MODEL` in cell 2 of the notebook:
+### Browser UI (`app.py`)
+
+A standalone Gradio web app — no Jupyter required.
+
+```bash
+python app.py
+```
+
+Then open **http://127.0.0.1:7860** in your browser.
+
+| Button | Action |
+|---|---|
+| **Submit** | Send your message to the chatbot |
+| **🔄 New Session** | Cancel the current session and start a fresh one |
+| **⏹ Exit** | Stop the server and close the app |
+
+Configuration constants (`OLLAMA_MODEL`, `CHROMA_PERSIST_DIR`, etc.) are defined at the top of `app.py` — edit them directly.
+
+> **Note:** You do **not** need to run notebook cell 5 before launching `app.py`. The browser app initializes/builds its RAG retrievers on startup. Run cell 5 only if you want to prebuild or refresh the local RAG corpus from the notebook.
+
+**Notebook** — edit `OLLAMA_MODEL` in cell 2:
+
+```python
+OLLAMA_MODEL = "mistral"   # or "gemma3", "phi3", "llama3.1:8b", etc.
+```
+
+**Browser app** — edit `OLLAMA_MODEL` near the top of `app.py`:
 
 ```python
 OLLAMA_MODEL = "mistral"   # or "gemma3", "phi3", "llama3.1:8b", etc.
@@ -124,13 +152,14 @@ python add_to_corpus.py --domain sw_quality --wiki "Mutation testing"
 python add_to_corpus.py --domain health --pdf report.pdf --dry-run
 ```
 
-After adding documents, re-run cell 5 in the notebook to reload the retrievers.
+> After adding documents, re-run cell 5 in the notebook to reload the retrievers, or restart `app.py`.
 
 ## Project Structure
 
 ```
 .
-├── multi-agent-chatbot.ipynb   # Multi-Agent ChatBot — router + specialist agents
+├── multi-agent-chatbot.ipynb   # Multi-Agent ChatBot — router + specialist agents (notebook UI)
+├── app.py                      # Standalone Gradio browser UI (runs without Jupyter)
 ├── add_to_corpus.py            # CLI tool: add PDFs, text, URLs or Wikipedia to ChromaDB
 ├── rag_corpus/                 # ChromaDB on-disk vector store (auto-created; gitignored)
 ├── requirements.txt            # Python dependencies
@@ -142,10 +171,11 @@ After adding documents, re-run cell 5 in the notebook to reload the retrievers.
 
 | Package | Version | Purpose | Licence |
 |---|---|---|---|
+| `gradio` | >=4.0.0 | Standalone browser UI (`app.py`) | Apache 2.0 |
 | `langchain-ollama` | >=0.2.0 | Ollama integration | MIT |
 | `langgraph` | >=1.0.2,<1.1.0 | Agentic state machine | MIT |
 | `ddgs` | >=9.0.0 | DuckDuckGo web search fallback (no API key) | MIT |
-| `ipywidgets` | >=8.0 | Interactive chat UI | BSD |
+| `ipywidgets` | >=8.0 | Interactive chat UI in the notebook | BSD |
 | `chromadb` | >=0.5.0 | Local vector store (RAG corpus) | Apache 2.0 |
 | `langchain-chroma` | >=0.2.0 | LangChain ↔ ChromaDB integration | MIT |
 | `langchain-community` | >=0.3.0 | WikipediaLoader + document loaders | MIT |

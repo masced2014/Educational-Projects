@@ -10,6 +10,8 @@ Each subfolder contains an individual learning project with an own description o
 
 - **agentic_ai**: Agentic AI chatbot built with LangGraph and Ollama, running fully locally.
   - `multi-agent-chatbot.ipynb` — routes topics to specialist agents (HealthBot, QualityBot) via an LLM classifier
+  - `app.py` — standalone Gradio browser UI for the same multi-agent system
+  - `add_to_corpus.py` — utility to index additional Wikipedia articles into the local ChromaDB RAG corpus
   - Project documentation: [agentic_ai/README.md](agentic_ai/README.md)
 - **data_science**: Exploratory data analysis of 1,399 Roman mining sites from the OXREP database using machine learning and statistical methods (EDA, data cleaning, visualization, classification).
   - `Roman_Mining_EDA_Analysis.ipynb` — CRISP-DM based analysis covering regional distribution, mining techniques, site complexity, and a Random Forest classifier
