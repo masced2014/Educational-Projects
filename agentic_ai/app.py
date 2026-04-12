@@ -805,7 +805,7 @@ def stop_server(history: list[dict]):
 
 def _build_demo() -> gr.Blocks:
     """Build and return the Gradio Blocks interface with chatbot, input controls, and session buttons."""
-    with gr.Blocks(title="Multi-Agent ChatBot", js="() => { document.body.classList.add('dark'); }") as demo:
+    with gr.Blocks(title="Multi-Agent ChatBot") as demo:
         gr.Markdown(
             "# 🤖 Multi-Agent ChatBot\n"
             "Powered by **Ollama + LangGraph**.  "
@@ -817,7 +817,6 @@ def _build_demo() -> gr.Blocks:
 
         chatbot = gr.Chatbot(
             label="Conversation",
-            type="messages",
             render_markdown=True,
             height=520,
             buttons=["copy", "copy_all"],
@@ -885,4 +884,4 @@ if __name__ == "__main__":
     _start_new_session()
 
     _demo = _build_demo()
-    _demo.launch(server_name="127.0.0.1", server_port=7860, show_error=True, theme=gr.themes.Soft())
+    _demo.launch(server_name="127.0.0.1", server_port=7860, show_error=True, theme=gr.themes.Soft(), js="() => { document.body.classList.add('dark'); }")
