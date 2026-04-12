@@ -116,10 +116,13 @@ class GradioChatBotUI:
     def get_input(self, prompt: str, allow_empty: bool = False) -> str:
         """Signal Gradio that the graph is awaiting input, then block."""
         self._output_queue.put((_AWAIT_INPUT, prompt))
-        value = self._input_queue.get()          # blocks until Gradio puts value
-        if value is _SENTINEL:
-            raise SystemExit("Session cancelled by user.")
-        return value
+        while True:
+            value = self._input_queue.get()      # blocks until Gradio puts value
+            if value is _SENTINEL:
+                raise SystemExit("Session cancelled by user.")
+            value = str(value).strip()
+            if allow_empty or value:
+                return value
 
     def bot_message(self, text: str, bot_name: str = "🤖 Bot") -> None:
         """Enqueue an assistant bubble prefixed with the agent display name."""
