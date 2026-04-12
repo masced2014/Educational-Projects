@@ -796,7 +796,7 @@ def _build_demo() -> gr.Blocks:
             exit_btn = gr.Button("⏹ Exit", variant="stop")
 
         gr.Markdown(
-            "<small>Running locally — no data leaves your machine.</small>",
+            "<small>Runs locally with Ollama, but optional web search may send queries to external services.</small>",
             elem_id="footer",
         )
 
