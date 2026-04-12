@@ -179,6 +179,52 @@ def _load_wiki(topics: list[str]) -> list:
     return docs
 
 
+# ── Metadata normalisation ───────────────────────────────────────────────────
+
+def _normalise_metadata(chunks: list) -> None:
+    """Ensure every chunk has consistent ``title``, ``source``, and
+    ``source_type`` metadata so the chatbot UI can build accurate citations.
+
+    Fields set (only when the loader has not already provided them):
+
+    * ``source_type`` – one of ``"wikipedia"``, ``"url"``, ``"pdf"``,
+      ``"txt"``, or ``"local"``.
+    * ``title`` – human-readable name: article title for Wikipedia, URL for
+      web pages, filename stem for PDFs/text files.
+    * ``source`` – guaranteed non-empty string (falls back to ``title``).
+    """
+    for chunk in chunks:
+        m = chunk.metadata
+        source = str(m.get("source") or "").strip()
+
+        # ── source_type ───────────────────────────────────────────────────
+        if not m.get("source_type"):
+            lower = source.lower()
+            if "wikipedia.org" in lower:
+                m["source_type"] = "wikipedia"
+            elif lower.startswith("http://") or lower.startswith("https://"):
+                m["source_type"] = "url"
+            elif lower.endswith(".pdf"):
+                m["source_type"] = "pdf"
+            elif lower.endswith(".txt"):
+                m["source_type"] = "txt"
+            else:
+                m["source_type"] = "local"
+
+        # ── title ─────────────────────────────────────────────────────────
+        if not m.get("title"):
+            if m["source_type"] in ("pdf", "txt", "local"):
+                m["title"] = Path(source).stem if source else "Unknown"
+            else:
+                # URL / Wikipedia: the URL is a readable citation fallback.
+                m["title"] = source or "Unknown"
+
+        # ── source ────────────────────────────────────────────────────────
+        # Guarantee source is always a non-empty string.
+        if not source:
+            m["source"] = m.get("title", "Unknown")
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -215,11 +261,16 @@ def main() -> None:
     chunks = splitter.split_documents(raw_docs)
     print(f"  → {len(chunks)} chunk(s) produced (size={CHUNK_SIZE}, overlap={CHUNK_OVERLAP})")
 
+    # Normalise metadata so every chunk has consistent title/source/source_type.
+    _normalise_metadata(chunks)
+
     if args.dry_run:
         print("\n── Dry run — skipping ChromaDB write. ────────────────────────────")
         for i, c in enumerate(chunks[:5], 1):
             preview = c.page_content[:120].replace("\n", " ")
+            meta = {k: c.metadata.get(k) for k in ("title", "source_type", "source")}
             print(f"  [{i}] {preview}…")
+            print(f"       metadata: {meta}")
         if len(chunks) > 5:
             print(f"  … and {len(chunks) - 5} more chunks.")
         return
