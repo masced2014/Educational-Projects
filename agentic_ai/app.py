@@ -817,6 +817,7 @@ def _build_demo() -> gr.Blocks:
 
         chatbot = gr.Chatbot(
             label="Conversation",
+            type="messages",
             render_markdown=True,
             height=520,
             buttons=["copy", "copy_all"],
