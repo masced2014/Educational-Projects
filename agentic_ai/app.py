@@ -642,10 +642,22 @@ def load_initial_messages() -> list[dict]:
     if messages:
         return messages
 
+    old_thread = None
+    with _session_lock:
+        if _graph_thread is not None and _graph_thread.is_alive():
+            old_thread = _graph_thread
+            ui._input_queue.put(_SENTINEL)
+
+    if old_thread is not None:
+        old_thread.join(timeout=5.0)
+        if old_thread.is_alive():
+            logging.warning(
+                "Timed out waiting for previous graph session to stop before "
+                "starting a new session."
+            )
+
     with _session_lock:
         if _graph_thread is None or not _graph_thread.is_alive():
-            _start_new_session()
-        else:
             _start_new_session()
     return list(_stream_until_await(timeout_first=15.0))
 
