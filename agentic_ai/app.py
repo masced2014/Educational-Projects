@@ -32,8 +32,8 @@ Flow per turn
 
 import asyncio
 import logging
-import os
 import queue
+import sys
 import threading
 import time
 import traceback
@@ -555,6 +555,7 @@ def _build_graph():
 
 _session_lock = threading.Lock()
 _graph_thread: threading.Thread | None = None
+_demo: gr.Blocks | None = None
 
 
 def _start_new_session() -> None:
@@ -711,11 +712,18 @@ def stop_server(history: list[dict]):
         "role": "assistant",
         "content": "👋 Server is shutting down. You can close this tab.",
     }]
-    # Exit in a background thread so Gradio can send this response first.
-
+    # Shut down gracefully in a background thread so Gradio can send this
+    # response first.  demo.close() stops the Gradio server cleanly, then
+    # sys.exit() raises SystemExit which runs atexit handlers and flushes
+    # buffers before the process terminates.
     def _exit():
         time.sleep(1.0)
-        os._exit(0)
+        try:
+            if _demo is not None:
+                _demo.close()
+        except Exception:
+            pass
+        sys.exit(0)
     threading.Thread(target=_exit, daemon=True).start()
     return history
 
@@ -789,5 +797,5 @@ if __name__ == "__main__":
     print("Starting graph session…")
     _start_new_session()
 
-    demo = _build_demo()
-    demo.launch(server_name="127.0.0.1", server_port=7860, show_error=True, theme=gr.themes.Soft())
+    _demo = _build_demo()
+    _demo.launch(server_name="127.0.0.1", server_port=7860, show_error=True, theme=gr.themes.Soft())
