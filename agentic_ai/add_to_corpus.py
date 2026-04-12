@@ -28,7 +28,7 @@ Examples
 Requirements
 ------------
   All packages are listed in requirements.txt. Install with:
-    .venv/bin/python3.12 -m pip install -r requirements.txt
+    pip install -r requirements.txt   (after activating the project venv)
   PDF support is included (pypdf>=4.0.0 is in requirements.txt).
 """
 
@@ -37,9 +37,9 @@ import sys
 from pathlib import Path
 
 # ── Dependency check ─────────────────────────────────────────────────────────
-# All packages below are installed by:  .venv/bin/python3.12 -m pip install -r requirements.txt
-# If you see an ImportError here, you are using the wrong Python interpreter.
-# Always run this script with:  .venv/bin/python3.12 add_to_corpus.py ...
+# All packages below are installed by:  pip install -r requirements.txt
+# If you see an ImportError here, activate the project venv first and retry.
+# Always run this script with:  python add_to_corpus.py ...
 
 _MISSING = []
 for _pkg, _import in [
@@ -59,10 +59,10 @@ if _MISSING:
     print(
         "\nERROR: The following packages are not importable with the current Python interpreter:\n"
         + "".join(f"  • {p}\n" for p in _MISSING)
-        + "\nMake sure you run the script with the project's virtual environment:\n"
-        "  .venv/bin/python3.12 add_to_corpus.py --help\n"
+        + "\nMake sure you run the script with the project's virtual environment activated:\n"
+        "  python add_to_corpus.py --help\n"
         "\nTo install missing packages:\n"
-        "  .venv/bin/python3.12 -m pip install -r requirements.txt\n",
+        "  pip install -r requirements.txt\n",
         file=sys.stderr,
     )
     sys.exit(1)
@@ -123,7 +123,7 @@ def _load_pdfs(paths: list[str]) -> list:
     try:
         from langchain_community.document_loaders import PyPDFLoader
     except ImportError:
-        print("ERROR: PDF support requires 'pypdf'.\n  Run: .venv/bin/python3.12 -m pip install pypdf", file=sys.stderr)
+        print("ERROR: PDF support requires 'pypdf'.\n  Run: pip install pypdf", file=sys.stderr)
         sys.exit(1)
 
     docs = []

@@ -58,13 +58,13 @@ search_* ──► ChromaDB (local RAG corpus)  ─── enough chunks? ──�
 
 2. **Create and activate a virtual environment:**
    ```bash
-   python3.12 -m venv .venv
+   python3 -m venv .venv
    source .venv/bin/activate   # Windows: .venv\Scripts\activate
    ```
 
 3. **Install Python dependencies:**
    ```bash
-   .venv/bin/python3.12 -m pip install -r requirements.txt
+   pip install -r requirements.txt
    ```
 
 4. **Start Ollama** (if not already running):
@@ -109,19 +109,19 @@ Use the standalone `add_to_corpus.py` script to add documents without rebuilding
 
 ```bash
 # Add a PDF to the health domain
-.venv/bin/python3.12 add_to_corpus.py --domain health --pdf /path/to/document.pdf
+python add_to_corpus.py --domain health --pdf /path/to/document.pdf
 
 # Add a whole folder of PDFs
-.venv/bin/python3.12 add_to_corpus.py --domain sw_quality --pdf /path/to/iso_docs/
+python add_to_corpus.py --domain sw_quality --pdf /path/to/iso_docs/
 
 # Add a web page
-.venv/bin/python3.12 add_to_corpus.py --domain health --url https://www.nhs.uk/conditions/diabetes/
+python add_to_corpus.py --domain health --url https://www.nhs.uk/conditions/diabetes/
 
 # Add a Wikipedia article
-.venv/bin/python3.12 add_to_corpus.py --domain sw_quality --wiki "Mutation testing"
+python add_to_corpus.py --domain sw_quality --wiki "Mutation testing"
 
 # Preview chunks without writing (dry run)
-.venv/bin/python3.12 add_to_corpus.py --domain health --pdf report.pdf --dry-run
+python add_to_corpus.py --domain health --pdf report.pdf --dry-run
 ```
 
 After adding documents, re-run cell 5 in the notebook to reload the retrievers.
