@@ -734,15 +734,30 @@ def respond(message: str, history: list[dict]):
 def start_new_session(history: list[dict]):
     """
     'New Session' button handler.
-    Cancels the running graph (if any) and starts a fresh one.
+    Cancels the running graph (if any), waits for it to stop, then starts a
+    fresh session.  Waiting prevents the old thread from emitting events into
+    the new session's queues and corrupting the chat stream.
     Returns the new greeting as the initial history.
     """
+    old_thread: threading.Thread | None = None
     with _session_lock:
-        # Unblock any in-flight get_input() call so the old thread can exit
-        try:
-            ui._input_queue.put(_SENTINEL)
-        except Exception:
-            pass
+        if _graph_thread is not None and _graph_thread.is_alive():
+            old_thread = _graph_thread
+            # Unblock any in-flight get_input() call so the old thread can exit
+            try:
+                ui._input_queue.put(_SENTINEL)
+            except Exception:
+                pass
+
+    if old_thread is not None:
+        old_thread.join(timeout=5.0)
+        if old_thread.is_alive():
+            logging.warning(
+                "Timed out waiting for previous graph session to stop before "
+                "starting a new session."
+            )
+
+    with _session_lock:
         _start_new_session()
 
     new_history = list(_stream_until_await(timeout_first=15.0))
