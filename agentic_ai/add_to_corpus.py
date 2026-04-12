@@ -200,10 +200,13 @@ def _normalise_metadata(chunks: list) -> None:
         # ── source_type ───────────────────────────────────────────────────
         if not m.get("source_type"):
             lower = source.lower()
-            if "wikipedia.org" in lower:
-                m["source_type"] = "wikipedia"
-            elif lower.startswith("http://") or lower.startswith("https://"):
-                m["source_type"] = "url"
+            if lower.startswith(("http://", "https://")):
+                # Identify Wikipedia by its canonical domain (//-anchored to
+                # avoid false matches like "evil-en.wikipedia.org/").
+                if "//en.wikipedia.org/" in lower:
+                    m["source_type"] = "wikipedia"
+                else:
+                    m["source_type"] = "url"
             elif lower.endswith(".pdf"):
                 m["source_type"] = "pdf"
             elif lower.endswith(".txt"):
