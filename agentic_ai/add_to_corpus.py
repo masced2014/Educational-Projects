@@ -48,6 +48,7 @@ for _pkg, _import in [
     ("langchain-chroma",      "langchain_chroma"),
     ("sentence-transformers", "sentence_transformers"),
     ("langchain-text-splitters", "langchain_text_splitters"),
+    ("wikipedia", "wikipedia"),
 ]:
     try:
         __import__(_import)
