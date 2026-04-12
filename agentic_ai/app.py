@@ -388,7 +388,7 @@ def classify_topic(state: ChatBotState) -> dict:
     domain = model.invoke(messages).content.strip().lower()
     if domain not in AGENT_LABELS:
         domain = "health"
-    ui.system_message(f"Routing to {AGENT_LABELS[domain]}…")
+    get_session_ui().system_message(f"Routing to {AGENT_LABELS[domain]}…")
     return {"domain": domain}
 
 
@@ -400,11 +400,12 @@ def route_domain(state: ChatBotState) -> str:
 def search_health(state: ChatBotState) -> dict:
     """Retrieve health information via the RAG corpus with optional DuckDuckGo supplement."""
     topic = state["topic"]
-    ui.system_message(f"🔍 Retrieving health information about '{topic}'…")
+    session_ui = get_session_ui()
+    session_ui.system_message(f"🔍 Retrieving health information about '{topic}'…")
     rag_context, rag_count = _rag_retrieve("health", topic)
     web_context = ""
     if not rag_context or rag_count < RAG_MIN_CHUNKS:
-        ui.system_message("📡 Supplementing with live DuckDuckGo search…")
+        session_ui.system_message("📡 Supplementing with live DuckDuckGo search…")
         web_context = _search_medical(topic)
     combined = "\n\n".join(filter(None, [rag_context, web_context]))
     return {
@@ -415,7 +416,7 @@ def search_health(state: ChatBotState) -> dict:
 
 def summarize_health(state: ChatBotState) -> dict:
     """Generate a patient-friendly health summary from retrieved search results using the LLM."""
-    ui.system_message("📝 Summarising health information…")
+    get_session_ui().system_message("📝 Summarising health information…")
     messages = [
         SystemMessage(content=(
             "You are a compassionate medical educator. "
@@ -432,11 +433,12 @@ def summarize_health(state: ChatBotState) -> dict:
 def search_sw_quality(state: ChatBotState) -> dict:
     """Retrieve software quality information via the RAG corpus with optional DuckDuckGo supplement."""
     topic = state["topic"]
-    ui.system_message(f"🔍 Retrieving software quality information about '{topic}'…")
+    session_ui = get_session_ui()
+    session_ui.system_message(f"🔍 Retrieving software quality information about '{topic}'…")
     rag_context, rag_count = _rag_retrieve("sw_quality", topic)
     web_context = ""
     if not rag_context or rag_count < RAG_MIN_CHUNKS:
-        ui.system_message("📡 Supplementing with live DuckDuckGo search…")
+        session_ui.system_message("📡 Supplementing with live DuckDuckGo search…")
         web_context = _search_sw_quality_web(topic)
     combined = "\n\n".join(filter(None, [rag_context, web_context]))
     return {
@@ -447,7 +449,7 @@ def search_sw_quality(state: ChatBotState) -> dict:
 
 def summarize_sw_quality(state: ChatBotState) -> dict:
     """Generate a professional software quality summary from retrieved search results using the LLM."""
-    ui.system_message("📝 Summarising software quality information…")
+    get_session_ui().system_message("📝 Summarising software quality information…")
     messages = [
         SystemMessage(content=(
             "You are a software quality expert. "
@@ -464,21 +466,22 @@ def summarize_sw_quality(state: ChatBotState) -> dict:
 def present_summary(state: ChatBotState) -> dict:
     """Display the LLM-generated summary as a chat message from the specialist agent."""
     label = AGENT_LABELS.get(state["domain"], "🤖 Bot")
-    ui.header(f"{label}: {state['topic']}")
-    ui.bot_message(state["summary"], bot_name=label)
+    session_ui = get_session_ui()
+    session_ui.header(f"{label}: {state['topic']}")
+    session_ui.bot_message(state["summary"], bot_name=label)
     return {}
 
 
 def prompt_ready_for_quiz(state: ChatBotState) -> dict:
     """Block until the user confirms they are ready to begin the comprehension quiz."""
-    ui.get_input("Press **Submit** when you are ready for the quiz.", allow_empty=True)
+    get_session_ui().get_input("Press **Submit** when you are ready for the quiz.", allow_empty=True)
     return {}
 
 
 def generate_quiz(state: ChatBotState) -> dict:
     """Generate one short-answer quiz question based solely on the displayed summary."""
     label = AGENT_LABELS.get(state["domain"], "🤖 Bot")
-    ui.system_message(f"🧠 {label} is generating your quiz question…")
+    get_session_ui().system_message(f"🧠 {label} is generating your quiz question…")
     messages = [
         SystemMessage(content=(
             "You are an educator. Create ONE clear short-answer question "
@@ -493,19 +496,19 @@ def generate_quiz(state: ChatBotState) -> dict:
 def present_quiz(state: ChatBotState) -> dict:
     """Display the quiz question in the chat."""
     label = AGENT_LABELS.get(state["domain"], "🤖 Bot")
-    ui.bot_message(state["quiz_question"], bot_name=label)
+    get_session_ui().bot_message(state["quiz_question"], bot_name=label)
     return {}
 
 
 def collect_answer(state: ChatBotState) -> dict:
     """Prompt the user to submit their answer to the quiz question."""
-    answer = ui.get_input("Your answer:")
+    answer = get_session_ui().get_input("Your answer:")
     return {"patient_answer": answer, "messages": [HumanMessage(content=answer)]}
 
 
 def evaluate_answer(state: ChatBotState) -> dict:
     """Grade the user's quiz answer against the summary using the LLM and return a letter grade with justification."""
-    ui.system_message("✅ Evaluating your answer…")
+    get_session_ui().system_message("✅ Evaluating your answer…")
     system = SystemMessage(content=(
         "You are a supportive educator. Grade the answer using ONLY the summary as reference.\n"
         "Scale: A (fully correct) · B (mostly correct) · C (partially correct) · D (poor) · F (wrong/blank)\n"
@@ -523,15 +526,16 @@ def evaluate_answer(state: ChatBotState) -> dict:
 
 def present_result(state: ChatBotState) -> dict:
     """Display the grade and justification in the chat."""
-    ui.header("Your Results")
     label = AGENT_LABELS.get(state["domain"], "🤖 Bot")
-    ui.bot_message(state["grade_and_explanation"], bot_name=label)
+    session_ui = get_session_ui()
+    session_ui.header("Your Results")
+    session_ui.bot_message(state["grade_and_explanation"], bot_name=label)
     return {}
 
 
 def ask_continue(state: ChatBotState) -> dict:
     """Ask the user whether they want to learn about another topic or end the session."""
-    choice = ui.get_input("Would you like to learn about another topic? (yes / no)")
+    choice = get_session_ui().get_input("Would you like to learn about another topic? (yes / no)")
     return {"continue_session": choice.strip().lower() in ("yes", "y")}
 
 
@@ -592,19 +596,28 @@ _demo: gr.Blocks | None = None
 
 
 def _start_new_session() -> None:
-    """Replace the global `ui` with a fresh instance and start the graph thread."""
+    """Create a fresh UI instance, bind it to the worker thread, and start the graph.
+
+    The new UI is also stored in the global `ui` so Gradio callbacks
+    (respond, _stream_until_await, etc.) can access the current session's queues.
+    Node functions in the worker thread use the thread-local get_session_ui()
+    accessor instead, so they always talk to the session they were started with
+    even if the global `ui` is later replaced by a newer session.
+    """
     global ui, _graph_thread
 
-    ui = GradioChatBotUI()
+    session_ui = GradioChatBotUI()
+    ui = session_ui  # expose current session to Gradio callbacks
     app = _build_graph()
     cfg = RunnableConfig(recursion_limit=2000, configurable={"thread_id": "session"})
 
     def _run() -> None:
+        set_session_ui(session_ui)  # bind to this thread; node functions use get_session_ui()
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
             app.invoke({"messages": []}, cfg)
-            ui.bot_message(
+            session_ui.bot_message(
                 "Thank you for using Multi-Agent ChatBot. See you next time!",
                 bot_name="🤖 Router",
             )
@@ -613,9 +626,9 @@ def _start_new_session() -> None:
         except Exception as exc:
             err = traceback.format_exc()
             print(err, flush=True)
-            ui.bot_message(f"⚠️ Session ended with an error: {exc}", bot_name="🤖 System")
+            session_ui.bot_message(f"⚠️ Session ended with an error: {exc}", bot_name="🤖 System")
         finally:
-            ui._output_queue.put((_END_SESSION, None))
+            session_ui._output_queue.put((_END_SESSION, None))
             loop.close()
 
     _graph_thread = threading.Thread(target=_run, daemon=True)
@@ -797,7 +810,9 @@ def _build_demo() -> gr.Blocks:
             "# 🤖 Multi-Agent ChatBot\n"
             "Powered by **Ollama + LangGraph**.  "
             "Ask about a health topic or a software quality topic and the router "
-            "will hand you off to the right specialist agent."
+            "will hand you off to the right specialist agent.\n\n"
+            "> ⚠️ **Single-tab only.** Session state is shared globally — "
+            "opening multiple browser tabs will share the same conversation."
         )
 
         chatbot = gr.Chatbot(
