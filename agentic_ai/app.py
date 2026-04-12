@@ -631,7 +631,21 @@ def load_initial_messages() -> list[dict]:
     Called once when the Gradio page loads.
     Waits for the graph's initial greeting and the first input prompt, then
     returns them as the starting chat history.
+
+    The UI/session lifecycle is global, so a prior page load may already have
+    drained the initial greeting from the shared output queue. In that case,
+    start a fresh session so each newly loaded page gets an initial greeting
+    and prompt instead of an empty chat.
     """
+    messages = list(_stream_until_await(timeout_first=15.0))
+    if messages:
+        return messages
+
+    with _session_lock:
+        if _graph_thread is None or not _graph_thread.is_alive():
+            _start_new_session()
+        else:
+            _start_new_session()
     return list(_stream_until_await(timeout_first=15.0))
 
 
