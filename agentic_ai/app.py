@@ -857,9 +857,20 @@ def _build_demo() -> gr.Blocks:
             concurrency_limit=1,
         )
 
-        # New session / Exit
-        new_btn.click(fn=start_new_session, inputs=[chatbot], outputs=[chatbot])
-        exit_btn.click(fn=stop_server, inputs=[chatbot], outputs=[chatbot])
+        # New session / Exit must also be serialized so they cannot run while
+        # a streaming respond() call is still mutating shared session state.
+        new_btn.click(
+            fn=start_new_session,
+            inputs=[chatbot],
+            outputs=[chatbot],
+            concurrency_limit=1,
+        )
+        exit_btn.click(
+            fn=stop_server,
+            inputs=[chatbot],
+            outputs=[chatbot],
+            concurrency_limit=1,
+        )
 
     return demo
 
