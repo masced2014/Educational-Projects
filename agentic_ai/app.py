@@ -328,24 +328,40 @@ def _rag_retrieve(domain: str, topic: str) -> tuple[str, int]:
 
 
 # ── Graph nodes ───────────────────────────────────────────────────────────────
-# All nodes reference the module-level `ui` variable, which is replaced with a
-# fresh GradioChatBotUI instance at the start of every session.
+# Graph nodes must not dereference a shared module-level mutable UI instance,
+# because a new session can start while an older worker thread is still
+# running. Keep the UI in thread-local storage so each worker continues to
+# talk to the session it started with.
 
-ui: GradioChatBotUI  # assigned in _start_new_session()
+_ui_local = threading.local()
+
+
+def set_session_ui(session_ui: GradioChatBotUI) -> None:
+    """Bind a GradioChatBotUI instance to the current thread/session."""
+    _ui_local.instance = session_ui
+
+
+def get_session_ui() -> GradioChatBotUI:
+    """Return the GradioChatBotUI bound to the current thread/session."""
+    session_ui = getattr(_ui_local, "instance", None)
+    if session_ui is None:
+        raise RuntimeError("Session UI has not been initialized for this thread")
+    return session_ui
 
 
 def get_topic(state: ChatBotState) -> dict:
     """Prompt the user for a topic and reset all session state fields for a new interaction."""
-    ui.clear()
-    ui.header("Welcome to Multi-Agent ChatBot")
-    ui.bot_message(
+    session_ui = get_session_ui()
+    session_ui.clear()
+    session_ui.header("Welcome to Multi-Agent ChatBot")
+    session_ui.bot_message(
         "I can help you learn about:\n"
         "• Health topics and medical conditions (HealthBot)\n"
         "• Software quality topics (QualityBot)\n\n"
         "Just ask your question and I'll route you to the right expert!",
         bot_name="🤖 Router",
     )
-    topic = ui.get_input("What would you like to learn about?")
+    topic = session_ui.get_input("What would you like to learn about?")
     return {
         "topic": topic,
         "domain": "",
