@@ -38,11 +38,11 @@
 //! ```
 
 use aes_gcm::{
-    aead::{Aead, KeyInit, OsRng},
+    aead::{Aead, KeyInit},
     Aes256Gcm, Nonce,
 };
 use argon2::{
-    password_hash::rand_core::RngCore,
+    password_hash::rand_core::{OsRng, RngCore},
     Argon2,
 };
 #[cfg(feature = "fast-kdf")]
