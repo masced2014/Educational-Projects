@@ -38,16 +38,14 @@
 //! ```
 
 use aes_gcm::{
-    aead::{Aead, KeyInit},
     Aes256Gcm, Nonce,
+    aead::{Aead, KeyInit},
 };
-use argon2::{
-    password_hash::rand_core::{OsRng, RngCore},
-    Argon2,
-};
+use anyhow::{Context, Result};
+use argon2::Argon2;
 #[cfg(feature = "fast-kdf")]
 use argon2::{Algorithm, Params, Version};
-use anyhow::{Context, Result};
+use rand_core::{OsRng, RngCore};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read, Write};
 use zeroize::Zeroizing;
@@ -134,7 +132,7 @@ impl FileCrypto {
         let argon2 = Argon2::new(
             Algorithm::Argon2id,
             Version::V0x13,
-            // m=8 KiB, t=1 iteration, p=1 lane — absolute minimum accepted by argon2 0.5
+            // m=8 KiB, t=1 iteration, p=1 lane — absolute minimum accepted by argon2 0.6
             Params::new(8, 1, 1, None)
                 .map_err(|e| anyhow::anyhow!("fast-kdf Params::new failed: {}", e))?,
         );
